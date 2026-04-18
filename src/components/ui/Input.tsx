@@ -10,16 +10,18 @@ interface InputProps extends React.InputHTMLAttributes<HTMLInputElement | HTMLSe
   label?: string;
   error?: string;
   type?: string;
+  icon?: React.ReactNode;
   options?: { value: string | number; label: string }[]; // Cho trường hợp là Select
 }
 
 export const Input = React.forwardRef<HTMLInputElement & HTMLSelectElement & HTMLTextAreaElement, InputProps>(
-  ({ className, label, error, type = 'text', options, ...props }, ref) => {
+  ({ className, label, error, type = 'text', icon, options, ...props }, ref) => {
     const isSelect = type === 'select';
     const isTextarea = type === 'textarea';
 
     const inputClasses = cn(
       'input-field',
+      icon && 'pl-12', // Thêm padding trái nếu có icon
       error && 'border-red-500 focus:ring-red-500/50 focus:border-red-500',
       className
     );
@@ -28,32 +30,40 @@ export const Input = React.forwardRef<HTMLInputElement & HTMLSelectElement & HTM
       <div className="w-full">
         {label && <label className="label-text">{label}</label>}
         
-        {isSelect ? (
-          <select 
-            ref={ref as any} 
-            className={inputClasses} 
-            {...(props as any)}
-          >
-            {options?.map((opt) => (
-              <option key={opt.value} value={opt.value} className="bg-background-light text-white">
-                {opt.label}
-              </option>
-            ))}
-          </select>
-        ) : isTextarea ? (
-          <textarea 
-            ref={ref as any} 
-            className={cn(inputClasses, 'min-h-[100px] resize-none')} 
-            {...(props as any)} 
-          />
-        ) : (
-          <input 
-            ref={ref as any} 
-            type={type} 
-            className={inputClasses} 
-            {...(props as any)} 
-          />
-        )}
+        <div className="relative">
+          {icon && (
+            <div className="absolute left-4 top-1/2 -translate-y-1/2 text-white/30 pointer-events-none transition-colors group-focus-within:text-primary">
+              {icon}
+            </div>
+          )}
+
+          {isSelect ? (
+            <select 
+              ref={ref as any} 
+              className={inputClasses} 
+              {...(props as any)}
+            >
+              {options?.map((opt) => (
+                <option key={opt.value} value={opt.value} className="bg-background-light text-white">
+                  {opt.label}
+                </option>
+              ))}
+            </select>
+          ) : isTextarea ? (
+            <textarea 
+              ref={ref as any} 
+              className={cn(inputClasses, 'min-h-[100px] resize-none')} 
+              {...(props as any)} 
+            />
+          ) : (
+            <input 
+              ref={ref as any} 
+              type={type} 
+              className={inputClasses} 
+              {...(props as any)} 
+            />
+          )}
+        </div>
 
         <div className="min-h-[20px] mt-1.5">
           {error && <p className="text-xs text-red-500 font-medium">{error}</p>}

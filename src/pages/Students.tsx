@@ -1,13 +1,13 @@
 import React, { useState, useRef, useMemo } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
-import { Plus, Users, Trash2, Search, Camera, Upload, Pencil } from 'lucide-react';
+import { Plus, Trash2, Search, Camera, Upload, Pencil } from 'lucide-react';
 import { db } from '../db/db';
 import { Button } from '../components/ui/Button';
 import { Card } from '../components/ui/Card';
 import { Input } from '../components/ui/Input';
 import { Modal } from '../components/ui/Modal';
 import { imageService } from '../services/image.service';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { useFilter } from '../context/FilterContext';
 
 export const Students = () => {

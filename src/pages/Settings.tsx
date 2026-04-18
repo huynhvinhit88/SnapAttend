@@ -1,11 +1,10 @@
 import React, { useState } from 'react';
-import { Settings as SettingsIcon, ShieldCheck, Download, Upload, Lock, RefreshCcw } from 'lucide-react';
+import { ShieldCheck, Download, Upload, Lock, RefreshCcw } from 'lucide-react';
 import { Button } from '../components/ui/Button';
 import { Card } from '../components/ui/Card';
 import { Input } from '../components/ui/Input';
 import { authService } from '../services/auth.service';
 import { backupService } from '../services/backup.service';
-import { motion } from 'framer-motion';
 
 export const Settings = () => {
   const [pinData, setPinData] = useState({ old: '', new: '' });

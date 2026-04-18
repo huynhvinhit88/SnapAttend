@@ -45,8 +45,8 @@ class AuthService {
    * Kiểm tra trạng thái mở khóa trong phiên
    */
   isUnlocked(): boolean {
-    // Nếu chưa thiết lập PIN thì coi như luôn mở khóa
-    if (!this.hasPin()) return true;
+    // Nếu chưa thiết lập PIN, PHẢI hiện màn hình PIN để thiết lập
+    if (!this.hasPin()) return false;
     return sessionStorage.getItem(SESSION_LOCK_KEY) === 'true';
   }
 

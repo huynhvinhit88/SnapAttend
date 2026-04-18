@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import { Lock, Delete } from 'lucide-react';
 import { Button } from './Button';
 import { authService } from '../../services/auth.service';
+import { clsx } from 'clsx';
 
 interface PinLockProps {
   onSuccess: () => void;
@@ -10,6 +11,7 @@ interface PinLockProps {
 
 export const PinLock = ({ onSuccess }: PinLockProps) => {
   const [pin, setPin] = useState('');
+  const [confirmPin, setConfirmPin] = useState<string | null>(null);
   const [error, setError] = useState(false);
   const isSettingPin = !authService.hasPin();
 
@@ -27,26 +29,51 @@ export const PinLock = ({ onSuccess }: PinLockProps) => {
   useEffect(() => {
     if (pin.length === 4) {
       if (isSettingPin) {
-        authService.setPin(pin);
-        onSuccess();
+        if (confirmPin === null) {
+          // Xong bước 1: Đã nhập PIN ban đầu
+          setConfirmPin(pin);
+          setPin('');
+        } else {
+          // Bước 2: Nhập PIN xác nhận
+          if (pin === confirmPin) {
+            authService.setPin(pin);
+            onSuccess();
+          } else {
+            setError(true);
+            setPin('');
+            setConfirmPin(null); // Bắt đầu lại từ đầu nếu sai
+            if ('vibrate' in navigator) navigator.vibrate([100, 50, 100]);
+          }
+        }
       } else {
         if (authService.verifyPin(pin)) {
           onSuccess();
         } else {
           setError(true);
           setPin('');
-          // Rung báo lỗi
           if ('vibrate' in navigator) navigator.vibrate([50, 50, 50]);
         }
       }
     }
-  }, [pin, isSettingPin, onSuccess]);
+  }, [pin, isSettingPin, confirmPin, onSuccess]);
+
+  const getTitle = () => {
+    if (!isSettingPin) return 'Nhập mã PIN';
+    return confirmPin === null ? 'Thiết lập mã PIN' : 'Xác nhận mã PIN';
+  };
+
+  const getSubtitle = () => {
+    if (!isSettingPin) return 'Ứng dụng đang khóa. Vui lòng nhập mã PIN để vào.';
+    return confirmPin === null 
+      ? 'Vui lòng tạo mã PIN 4 số để bảo vệ dữ liệu của bạn.' 
+      : 'Vui lòng nhập lại mã PIN một lần nữa để xác nhận.';
+  };
 
   return (
     <motion.div 
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      className="fixed inset-0 z-[100] bg-background flex flex-col items-center justify-center p-6"
+      className="fixed inset-0 z-[200] bg-background flex flex-col items-center justify-center p-6"
     >
       <div className="w-full max-w-sm flex flex-col items-center">
         <div className="w-16 h-16 bg-primary/20 rounded-2xl flex items-center justify-center mb-6 shadow-lg shadow-primary/20">
@@ -54,12 +81,10 @@ export const PinLock = ({ onSuccess }: PinLockProps) => {
         </div>
         
         <h2 className="text-2xl font-bold text-white mb-2">
-          {isSettingPin ? 'Thiết lập mã PIN' : 'Nhập mã PIN'}
+          {getTitle()}
         </h2>
         <p className="text-white/40 mb-8 text-center text-sm">
-          {isSettingPin 
-            ? 'Vui lòng tạo mã PIN 4 số để bảo vệ dữ liệu của bạn.' 
-            : 'Ứng dụng đang khóa. Vui lòng nhập mã PIN để vào.'}
+          {getSubtitle()}
         </p>
 
         {/* PIN Indicators */}
@@ -110,5 +135,3 @@ export const PinLock = ({ onSuccess }: PinLockProps) => {
     </motion.div>
   );
 };
-
-import { clsx } from 'clsx';

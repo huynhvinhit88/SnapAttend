@@ -13,7 +13,26 @@ interface QuickAttendanceFABProps {
 export const QuickAttendanceFAB = ({ onNavigate, activeId }: QuickAttendanceFABProps) => {
   const { updateFilter } = useFilter();
   const [isVisible, setIsVisible] = useState(true);
+  const [isModalOpen, setIsModalOpen] = useState(false);
   const [lastScrollY, setLastScrollY] = useState(0);
+
+  // Phát hiện Modal mở để ẩn FAB
+  useEffect(() => {
+    const checkModal = () => {
+      setIsModalOpen(document.body.hasAttribute('data-modal-open'));
+    };
+
+    // Kiểm tra lần đầu
+    checkModal();
+
+    const observer = new MutationObserver(checkModal);
+    observer.observe(document.body, { 
+      attributes: true, 
+      attributeFilter: ['data-modal-open'] 
+    });
+
+    return () => observer.disconnect();
+  }, []);
 
   // Hiệu ứng ẩn/hiện khi cuộn trang
   useEffect(() => {
@@ -48,7 +67,7 @@ export const QuickAttendanceFAB = ({ onNavigate, activeId }: QuickAttendanceFABP
 
   return (
     <AnimatePresence>
-      {isVisible && (
+      {(isVisible && !isModalOpen) && (
         <motion.div
           initial={{ opacity: 0, scale: 0.5, y: 100 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}

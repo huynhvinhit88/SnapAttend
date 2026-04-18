@@ -14,11 +14,14 @@ export const Modal = ({ isOpen, onClose, title, children }: ModalProps) => {
   React.useEffect(() => {
     if (isOpen) {
       document.body.style.overflow = 'hidden';
+      document.body.setAttribute('data-modal-open', 'true');
     } else {
       document.body.style.overflow = 'unset';
+      document.body.removeAttribute('data-modal-open');
     }
     return () => {
       document.body.style.overflow = 'unset';
+      document.body.removeAttribute('data-modal-open');
     };
   }, [isOpen]);
 

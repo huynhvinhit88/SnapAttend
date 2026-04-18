@@ -102,7 +102,7 @@ export const Subjects = () => {
       >
         <Button onClick={() => {
           setEditingId(null);
-          setFormData({ name: '', code: '', credits: 0, department: '' });
+          setFormData({ name: '', code: '', credits: 0 });
           setErrors({});
           setIsModalOpen(true);
         }}>

@@ -14,6 +14,7 @@ import { Input } from '../components/ui/Input';
 import { motion, AnimatePresence } from 'framer-motion';
 import { clsx } from 'clsx';
 import { PageHeader } from '../components/ui/PageHeader';
+import { Modal } from '../components/ui/Modal';
 import { googleDriveService } from '../services/googleDrive.service';
 import { backupService } from '../services/backup.service';
 
@@ -27,6 +28,14 @@ interface ValidationResult {
   invalidFields: string[];
   transformedData: any;
 }
+
+const StatItem = ({ color, label, count }: { color: string; label: string; count: number }) => (
+  <div className="flex items-center gap-2.5">
+    <div className={clsx("w-3 h-3 rounded-full shadow-sm", color)} />
+    <span className="text-[10px] text-foreground/40 uppercase font-black tracking-widest">{label}:</span>
+    <span className="text-sm font-black text-foreground">{count}</span>
+  </div>
+);
 
 const CATEGORIES: { id: Category; label: string; icon: any }[] = [
   { id: 'classes', label: 'Quản lý Lớp', icon: Database },
@@ -55,6 +64,8 @@ export const DataManagement = () => {
   const dbTeachers = useLiveQuery(() => db.teachers.toArray());
   const dbSubjects = useLiveQuery(() => db.subjects.toArray());
   const dbSections = useLiveQuery(() => db.sections.toArray());
+  const [isCloudPickerOpen, setIsCloudPickerOpen] = useState(false);
+  const [excelCloudFiles, setExcelCloudFiles] = useState<any[]>([]);
   const academicYears = useLiveQuery(() => db.academicYears.toArray());
   const [selectedYearToDelete, setSelectedYearToDelete] = useState('');
 
@@ -153,7 +164,8 @@ export const DataManagement = () => {
     
     setIsProcessing(true);
     try {
-      const content = await googleDriveService.downloadFile(fileId);
+      const buffer = await googleDriveService.downloadFile(fileId);
+      const content = new TextDecoder().decode(buffer);
       const success = await backupService.importData(content);
       if (success) {
         alert('Khôi phục dữ liệu thành công! Ứng dụng sẽ tải lại.');
@@ -163,7 +175,7 @@ export const DataManagement = () => {
       }
     } catch (error) {
       console.error(error);
-      alert('Lỗi khi tải file từ Drive.');
+      alert('Lỗi khôi phục: ' + (typeof error === 'string' ? error : 'Vui lòng kiểm tra lại cấu hình'));
     } finally {
       setIsProcessing(false);
     }
@@ -437,7 +449,7 @@ export const DataManagement = () => {
     }
   };
 
-  const handleExport = async () => {
+  const handleExport = async (isCloud: boolean = false) => {
     if (exportSelection.size === 0) return alert('Vui lòng chọn ít nhất một danh mục để xuất!');
 
     setIsProcessing(true);
@@ -485,10 +497,51 @@ export const DataManagement = () => {
         XLSX.utils.book_append_sheet(wb, ws, CATEGORIES.find(c => c.id === category)?.label || 'Dữ liệu');
       }
 
-      XLSX.writeFile(wb, `SnapAttend_Export_${new Date().toISOString().split('T')[0]}.xlsx`);
+      const fileName = `SnapAttend_Export_${new Date().toISOString().split('T')[0]}.xlsx`;
+      
+      if (isCloud) {
+        const excelBuffer = XLSX.write(wb, { type: 'array', bookType: 'xlsx' });
+        await googleDriveService.uploadFile(fileName, excelBuffer, 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+        alert('Đã lưu tệp Excel lên Google Drive thành công!');
+      } else {
+        XLSX.writeFile(wb, fileName);
+      }
     } catch (error) {
       console.error('Lỗi export:', error);
-      alert('Không thể xuất tệp Excel.');
+      alert('Không thể xuất tệp Excel: ' + (typeof error === 'string' ? error : 'Vui lòng kiểm tra lại cấu hình Cloud'));
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const handleCloudImport = async () => {
+    try {
+      setIsSyncing(true);
+      const files = await googleDriveService.listFiles('application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+      setExcelCloudFiles(files);
+      setIsCloudPickerOpen(true);
+    } catch (error) {
+      console.error(error);
+      alert('Không thể lấy danh sách tệp từ Drive: ' + error);
+    } finally {
+      setIsSyncing(false);
+    }
+  };
+
+  const handleSelectCloudExcel = async (fileId: string) => {
+    setIsProcessing(true);
+    setIsCloudPickerOpen(false);
+    try {
+      const buffer = await googleDriveService.downloadFile(fileId);
+      const wb = XLSX.read(buffer, { type: 'array' });
+      const wsname = wb.SheetNames[0];
+      const ws = wb.Sheets[wsname];
+      const data = XLSX.utils.sheet_to_json(ws);
+      
+      await validateData(data);
+    } catch (error) {
+      console.error('Lỗi đọc file từ Drive:', error);
+      alert('Không thể đọc tệp Excel từ Drive.');
     } finally {
       setIsProcessing(false);
     }
@@ -662,6 +715,19 @@ export const DataManagement = () => {
                       Chọn tệp khác
                     </Button>
                   )}
+                  
+                  {importData.length === 0 && (
+                    <div className="mt-4 pt-4 border-t border-foreground/5 flex flex-col items-center gap-2">
+                       <p className="text-[10px] text-foreground/20 font-black uppercase tracking-widest mb-2">Hoặc chọn từ đám mây</p>
+                       <Button variant="ghost" className="border border-primary/20 hover:bg-primary/5 text-primary" onClick={(e) => {
+                         e.stopPropagation();
+                         handleCloudImport();
+                       }}>
+                         <Cloud className="w-4 h-4" />
+                         Chọn từ Google Drive
+                       </Button>
+                    </div>
+                  )}
                 </div>
               </Card>
             </div>
@@ -780,11 +846,21 @@ export const DataManagement = () => {
                 ))}
               </div>
 
-              <div className="flex justify-end p-6 bg-primary/5 rounded-3xl">
+              <div className="flex justify-end gap-3 p-6 bg-primary/5 rounded-3xl">
+                <Button 
+                  size="lg" 
+                  variant="ghost"
+                  disabled={exportSelection.size === 0 || isProcessing}
+                  onClick={() => handleExport(true)}
+                  className="px-8 h-14 border border-primary/30 text-primary hover:bg-primary/10"
+                >
+                  <CloudUpload className="w-5 h-5" />
+                  Lưu lên Drive
+                </Button>
                 <Button 
                   size="lg" 
                   disabled={exportSelection.size === 0 || isProcessing}
-                  onClick={handleExport}
+                  onClick={() => handleExport(false)}
                   className="px-12 h-14 text-lg"
                 >
                   {isProcessing ? <RefreshCw className="w-5 h-5 animate-spin" /> : <FileDown className="w-5 h-5" />}
@@ -993,14 +1069,45 @@ export const DataManagement = () => {
           </div>
         </div>
       </div>
+      {/* Modal chọn file từ Cloud */}
+      <Modal
+        isOpen={isCloudPickerOpen}
+        onClose={() => setIsCloudPickerOpen(false)}
+        title="Chọn tệp Excel từ Google Drive"
+      >
+        <div className="space-y-4 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
+          {excelCloudFiles.length === 0 ? (
+            <div className="text-center py-12 text-foreground/40 italic">
+              Không tìm thấy tệp Excel nào trong thư mục SnapAttend.
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 gap-2">
+              {excelCloudFiles.map((file) => (
+                <button
+                  key={file.id}
+                  onClick={() => handleSelectCloudExcel(file.id)}
+                  className="flex items-center justify-between p-4 rounded-2xl bg-foreground/5 hover:bg-primary/5 border border-transparent hover:border-primary/20 transition-all text-left group"
+                >
+                  <div className="flex items-center gap-4">
+                    <div className="w-10 h-10 bg-green-500/10 rounded-xl flex items-center justify-center">
+                      <FileDown className="w-5 h-5 text-green-500" />
+                    </div>
+                    <div>
+                      <h5 className="text-sm font-bold text-foreground group-hover:text-primary transition-colors">{file.name}</h5>
+                      <p className="text-[10px] text-foreground/40 mt-0.5">
+                        {new Date(file.createdTime).toLocaleString('vi-VN')}
+                      </p>
+                    </div>
+                  </div>
+                  <CheckCircle2 className="w-5 h-5 text-green-500 opacity-0 group-hover:opacity-100" />
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+      </Modal>
     </div>
   );
 };
 
-const StatItem = ({ color, label, count }: { color: string; label: string; count: number }) => (
-  <div className="flex items-center gap-2.5">
-    <div className={clsx("w-3 h-3 rounded-full shadow-sm", color)} />
-    <span className="text-[10px] text-foreground/40 uppercase font-black tracking-widest">{label}:</span>
-    <span className="text-sm font-black text-foreground">{count}</span>
-  </div>
-);
+

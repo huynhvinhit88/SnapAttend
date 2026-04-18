@@ -143,7 +143,7 @@ class GoogleDriveService {
     }
   }
 
-  async uploadFile(name: string, content: string, mimeType: string = 'application/json'): Promise<any> {
+  async uploadFile(name: string, content: string | Blob | Uint8Array, mimeType: string = 'application/json'): Promise<any> {
     let folderId = await this.getFolderId();
     
     // Kiểm tra folder tồn tại, nếu không thì bắt chọn lại
@@ -161,7 +161,7 @@ class GoogleDriveService {
 
     const form = new FormData();
     form.append('metadata', new Blob([JSON.stringify(metadata)], { type: 'application/json' }));
-    form.append('file', new Blob([content], { type: mimeType }));
+    form.append('file', new Blob([content as any], { type: mimeType }));
 
     const response = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart', {
       method: 'POST',
@@ -195,7 +195,7 @@ class GoogleDriveService {
     return data.files || [];
   }
 
-  async downloadFile(fileId: string): Promise<string> {
+  async downloadFile(fileId: string): Promise<ArrayBuffer> {
     if (!this.accessToken) await this.authenticate();
 
     const response = await fetch(`https://www.googleapis.com/drive/v3/files/${fileId}?alt=media`, {
@@ -204,7 +204,7 @@ class GoogleDriveService {
       }
     });
 
-    return await response.text();
+    return await response.arrayBuffer();
   }
 }
 

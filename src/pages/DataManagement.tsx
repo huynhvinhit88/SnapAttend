@@ -89,7 +89,8 @@ export const DataManagement = () => {
       try {
         await db.transaction('rw', [
           db.classes, db.students, db.sections, 
-          db.enrollments, db.sessions, db.attendance
+          db.enrollments, db.sessions, db.attendance,
+          db.academicYears
         ], async () => {
           // 1. Xóa Attendance
           await db.attendance.where('sessionId').anyOf(sessionIds).delete();
@@ -103,6 +104,8 @@ export const DataManagement = () => {
           await db.students.where('classId').anyOf(classIds).delete();
           // 6. Xóa Classes
           await db.classes.where('academicYear').equals(selectedYearToDelete).delete();
+          // 7. Xóa chính năm học đó khỏi danh sách quản lý
+          await db.academicYears.where('name').equals(selectedYearToDelete).delete();
         });
         
         alert(`Đã dọn dẹp thành công dữ liệu năm học ${selectedYearToDelete}!`);
@@ -929,7 +932,7 @@ export const DataManagement = () => {
                 </p>
               </div>
 
-              <div className="flex gap-2 items-end">
+              <div className="flex gap-2">
                 <div className="flex-1">
                   <Input 
                     label="Chọn năm học muốn xóa"
@@ -942,7 +945,7 @@ export const DataManagement = () => {
                 <Button 
                   variant="ghost" 
                   disabled={!selectedYearToDelete || isProcessing}
-                  className="text-red-500 hover:bg-red-500/10 text-[10px] font-black uppercase tracking-widest h-11 mb-0.5"
+                  className="text-red-500 hover:bg-red-500/10 text-[10px] font-black uppercase tracking-widest h-11 mt-[26px]"
                   onClick={handleDeleteYear}
                 >
                   Xóa năm học

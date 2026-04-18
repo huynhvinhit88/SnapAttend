@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { 
   ShieldCheck, Lock, Settings as SettingsIcon, Star,
-  Plus, Calendar, Trash2
+  Plus, Calendar
 } from 'lucide-react';
 import { PageHeader } from '../components/ui/PageHeader';
 import { Button } from '../components/ui/Button';
@@ -35,14 +35,6 @@ export const Settings = () => {
     }
   };
 
-  const handleDeleteYear = async (id: number) => {
-    const year = academicYears?.find(y => y.id === id);
-    if (!year) return;
-
-    if (confirm(`Bạn có chắc chắn muốn xóa năm học "${year.name}"?`)) {
-      await db.academicYears.delete(id);
-    }
-  };
 
   const handleSetDefaultYear = async (id: number) => {
     await db.transaction('rw', db.academicYears, async () => {
@@ -134,9 +126,6 @@ export const Settings = () => {
                         Đặt mặc định
                       </Button>
                     )}
-                    <Button variant="ghost" className="p-1 h-7 text-red-500 hover:bg-red-500/10 rounded-lg" onClick={() => handleDeleteYear(y.id!)}>
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
                   </div>
                 </div>
               ))}

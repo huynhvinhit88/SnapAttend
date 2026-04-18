@@ -724,7 +724,7 @@ export const DataManagement = () => {
                          handleCloudImport();
                        }}>
                          <Cloud className="w-4 h-4" />
-                         Chọn từ Google Drive
+                         Chọn từ Drive
                        </Button>
                     </div>
                   )}
@@ -1073,7 +1073,7 @@ export const DataManagement = () => {
       <Modal
         isOpen={isCloudPickerOpen}
         onClose={() => setIsCloudPickerOpen(false)}
-        title="Chọn tệp Excel từ Google Drive"
+        title="Chọn tệp Excel từ Drive"
       >
         <div className="space-y-4 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
           {excelCloudFiles.length === 0 ? (

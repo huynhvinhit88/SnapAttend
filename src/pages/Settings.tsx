@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { 
   ShieldCheck, Lock, Settings as SettingsIcon, Star,
-  Plus, Calendar
+  Plus, Calendar, Info
 } from 'lucide-react';
 import { PageHeader } from '../components/ui/PageHeader';
 import { Button } from '../components/ui/Button';
@@ -129,9 +129,13 @@ export const Settings = () => {
                   </div>
                 </div>
               ))}
-              {academicYears?.length === 0 && (
-                <p className="text-center py-4 text-foreground/30 text-sm italic">Chưa có dữ liệu năm học.</p>
-              )}
+            </div>
+
+            <div className="mt-4 p-4 rounded-2xl bg-primary/5 border border-primary/10 flex gap-3">
+              <Info className="w-5 h-5 text-primary shrink-0" />
+              <p className="text-xs text-foreground/60 leading-relaxed">
+                <strong>Lưu ý:</strong> Để xóa năm học, hãy sử dụng tính năng <strong>Dọn dẹp dữ liệu theo năm học</strong> tại mục <strong>Dữ liệu</strong>. Năm học sẽ tự động được gỡ bỏ sau khi dữ liệu liên quan đã được xóa sạch.
+              </p>
             </div>
           </div>
         </Card>

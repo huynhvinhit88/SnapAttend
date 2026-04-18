@@ -1,6 +1,6 @@
-import React, { useState, useMemo } from 'react';
+import { useMemo } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
-import { BarChart3, FileSpreadsheet, Filter, CheckCircle2, Clock, XCircle, Calendar, BookOpen, Layers, Trash2 } from 'lucide-react';
+import { FileSpreadsheet, Filter, CheckCircle2, Clock, XCircle, Calendar, BookOpen, Layers, Trash2 } from 'lucide-react';
 import { db } from '../db/db';
 import { Button } from '../components/ui/Button';
 import { Card } from '../components/ui/Card';

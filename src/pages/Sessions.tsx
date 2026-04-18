@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
-import { Plus, Calendar, Trash2, Search, Zap, Clock } from 'lucide-react';
+import { Calendar, Trash2, Search, Zap, Clock } from 'lucide-react';
 import { db } from '../db/db';
 import { sessionService } from '../services/session.service';
 import { Button } from '../components/ui/Button';

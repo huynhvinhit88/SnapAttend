@@ -6,7 +6,7 @@ import { Button } from '../components/ui/Button';
 import { Card } from '../components/ui/Card';
 import { Input } from '../components/ui/Input';
 import { Modal } from '../components/ui/Modal';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { useFilter } from '../context/FilterContext';
 
 export const Sections = () => {
@@ -379,7 +379,7 @@ export const Sections = () => {
       <Modal isOpen={isViewStudentsModalOpen} onClose={() => setIsViewStudentsModalOpen(false)} title="Danh sách học sinh của lớp">
         <div className="space-y-4">
           <div className="max-h-[450px] overflow-auto space-y-2 pr-2 custom-scrollbar">
-            {enrollments?.filter(e => e.sectionId === selectedSectionId).map((enrollment, idx) => {
+            {enrollments?.filter(e => e.sectionId === selectedSectionId).map((enrollment) => {
               const student = students?.find(s => s.id === enrollment.studentId);
               if (!student) return null;
 

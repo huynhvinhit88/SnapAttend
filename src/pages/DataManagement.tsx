@@ -1,15 +1,14 @@
-import React, { useState, useCallback, useMemo } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
-import * as XLSX from 'https://cdn.sheetjs.com/xlsx-0.18.5/package/xlsx.mjs';
+import * as XLSX from 'xlsx';
 import { 
   FileUp, FileDown, CheckCircle2, AlertTriangle, 
   XCircle, Upload, Database, Download, Trash2, 
-  Search, Info, Check
+  Info, Check
 } from 'lucide-react';
 import { db } from '../db/db';
 import { Button } from '../components/ui/Button';
 import { Card } from '../components/ui/Card';
-import { Input } from '../components/ui/Input';
 import { motion, AnimatePresence } from 'framer-motion';
 import { clsx } from 'clsx';
 
@@ -533,7 +532,7 @@ export const DataManagement = () => {
                         {importData.map((res, idx) => (
                           <tr key={idx} className="border-b border-white/5 hover:bg-white/5 transition-colors group">
                             <td className="p-4 pl-6">
-                              {res.status === 'ok' && <CheckCircle2 className="w-5 h-5 text-green-500" title="Hợp lệ" />}
+                              {res.status === 'ok' && <CheckCircle2 className="w-5 h-5 text-green-500" />}
                               {res.status === 'warning' && (
                                 <div className="relative">
                                   <AlertTriangle className="w-5 h-5 text-yellow-500" />

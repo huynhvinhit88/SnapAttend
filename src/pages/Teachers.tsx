@@ -28,6 +28,7 @@ export const Teachers = () => {
 
   const teachers = useLiveQuery(() => db.teachers.toArray());
   const teacherCount = useLiveQuery(() => db.teachers.count());
+  const subjects = useLiveQuery(() => db.subjects.toArray());
 
   const filteredTeachers = useMemo(() => {
     if (!teachers) return [];
@@ -205,6 +206,11 @@ export const Teachers = () => {
           />
           <Input 
             label="Bộ môn" 
+            type="select"
+            options={[
+              { value: '', label: 'Chọn bộ môn...' },
+              ...(subjects?.map(s => ({ value: s.name, label: s.name })) || [])
+            ]}
             value={formData.department}
             onChange={(e) => setFormData({...formData, department: e.target.value})}
           />

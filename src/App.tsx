@@ -16,7 +16,7 @@ import { FilterProvider, useFilter } from './context/FilterContext';
 import { ThemeProvider } from './context/ThemeContext';
 
 function SnapAttendApp() {
-  const [activePage, setActivePage] = useState('classes');
+  const [activePage, setActivePage] = useState('sessions');
   const [selectedSessionId, setSelectedSessionId] = useState<number | null>(null);
   const [isUnlocked, setIsUnlocked] = useState(authService.isUnlocked());
   const { clearFilters } = useFilter();

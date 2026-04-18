@@ -7,12 +7,12 @@ import { clsx } from 'clsx';
 import { useTheme } from '../../context/ThemeContext';
 
 const menuItems = [
+  { id: 'sessions', label: 'Ca học', icon: Calendar },
   { id: 'classes', label: 'Lớp', icon: School },
   { id: 'students', label: 'Học sinh', icon: Users },
   { id: 'teachers', label: 'Giáo viên', icon: GraduationCap },
   { id: 'subjects', label: 'Môn học', icon: BookOpen },
   { id: 'sections', label: 'Lớp học phần', icon: Layers },
-  { id: 'sessions', label: 'Ca học', icon: Calendar },
   { id: 'reports', label: 'Báo cáo', icon: BarChart3 },
   { id: 'data', label: 'Dữ liệu', icon: Database },
   { id: 'settings', label: 'Cài đặt', icon: Settings },

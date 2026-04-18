@@ -226,10 +226,6 @@ export const Classes = () => {
               { value: 'Khối 10', label: 'Khối 10' },
               { value: 'Khối 11', label: 'Khối 11' },
               { value: 'Khối 12', label: 'Khối 12' },
-              { value: 'Năm nhất', label: 'Đại học - Năm nhất' },
-              { value: 'Năm hai', label: 'Đại học - Năm hai' },
-              { value: 'Năm ba', label: 'Đại học - Năm ba' },
-              { value: 'Năm bốn', label: 'Đại học - Năm bốn' },
             ]}
             value={formData.grade}
             onChange={(e) => {

@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Zap, X } from 'lucide-react';
+import { Zap } from 'lucide-react';
 import { useFilter } from '../../context/FilterContext';
 import { format } from 'date-fns';
 import { clsx } from 'clsx';

@@ -52,8 +52,7 @@ export const Classes = () => {
     try {
       if (editingId) {
         await db.classes.update(editingId, {
-          ...formData,
-          updatedAt: Date.now()
+          ...formData
         });
       } else {
         await db.classes.add({

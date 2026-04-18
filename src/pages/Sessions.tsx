@@ -9,7 +9,7 @@ import { Button } from '../components/ui/Button';
 import { Card } from '../components/ui/Card';
 import { Input } from '../components/ui/Input';
 import { Modal } from '../components/ui/Modal';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { useFilter } from '../context/FilterContext';
 import { PageHeader } from '../components/ui/PageHeader';
 import { addWeeks, format } from 'date-fns';
@@ -68,7 +68,7 @@ export const Sessions = ({ onStartAttendance }: SessionsProps) => {
 
     try {
       const start = new Date(recurringData.startDate);
-      const newSessions = [];
+      const newSessions: any[] = [];
 
       for (let i = 0; i < recurringData.weeks; i++) {
         const currentDate = addWeeks(start, i);
@@ -77,7 +77,7 @@ export const Sessions = ({ onStartAttendance }: SessionsProps) => {
           date: format(currentDate, 'yyyy-MM-dd'),
           startTime: recurringData.startTime,
           endTime: recurringData.endTime,
-          status: 'pending',
+          status: 'pending' as const,
           createdAt: Date.now()
         });
       }

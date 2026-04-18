@@ -19,8 +19,7 @@ export const Subjects = () => {
   const [formData, setFormData] = useState({
     name: '',
     code: '',
-    credits: 0,
-    department: ''
+    credits: 0
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -32,8 +31,7 @@ export const Subjects = () => {
     if (!subjects) return [];
     return subjects.filter(s => 
       s.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      s.code.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      s.department?.toLowerCase().includes(searchTerm.toLowerCase())
+      s.code.toLowerCase().includes(searchTerm.toLowerCase())
     );
   }, [subjects, searchTerm]);
 
@@ -54,15 +52,17 @@ export const Subjects = () => {
       if (editingId) {
         await db.subjects.update(editingId, {
           ...formData,
-          createdAt: Date.now()
+          credits: parseInt(formData.credits.toString())
         });
       } else {
         await db.subjects.add({
-          ...formData,
+          name: formData.name.trim(),
+          code: formData.code.trim(),
+          credits: parseInt(formData.credits.toString()),
           createdAt: Date.now()
         });
       }
-      setFormData({ name: '', code: '', credits: 0, department: '' });
+      setFormData({ name: '', code: '', credits: 0 });
       setEditingId(null);
       setIsModalOpen(false);
     } catch (error) {
@@ -74,8 +74,7 @@ export const Subjects = () => {
     setFormData({
       name: subject.name,
       code: subject.code,
-      credits: subject.credits,
-      department: subject.department || ''
+      credits: subject.credits
     });
     setEditingId(subject.id);
     setIsModalOpen(true);
@@ -190,7 +189,7 @@ export const Subjects = () => {
             value={formData.credits} 
             error={errors.credits}
             onChange={e => {
-              setFormData({...formData, credits: e.target.value});
+              setFormData({...formData, credits: parseInt(e.target.value) || 0});
               if (errors.credits) setErrors({...errors, credits: ''});
             }} 
           />

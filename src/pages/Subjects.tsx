@@ -166,21 +166,21 @@ export const Subjects = () => {
       >
         <form noValidate onSubmit={handleAddSubject} className="space-y-4">
           <Input 
-            label="Mã môn học" 
-            value={formData.code} 
-            error={errors.code}
-            onChange={e => {
-              setFormData({...formData, code: e.target.value});
-              if (errors.code) setErrors({...errors, code: ''});
-            }} 
-          />
-          <Input 
             label="Tên môn học" 
             value={formData.name} 
             error={errors.name}
             onChange={e => {
               setFormData({...formData, name: e.target.value});
               if (errors.name) setErrors({...errors, name: ''});
+            }} 
+          />
+          <Input 
+            label="Mã môn học" 
+            value={formData.code} 
+            error={errors.code}
+            onChange={e => {
+              setFormData({...formData, code: e.target.value});
+              if (errors.code) setErrors({...errors, code: ''});
             }} 
           />
           <Input 

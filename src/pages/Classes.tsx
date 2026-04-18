@@ -133,7 +133,7 @@ export const Classes = () => {
         <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-foreground/30 transition-colors group-focus-within:text-primary" />
         <Input 
           className="pl-12 h-14 text-lg bg-background-light/50 backdrop-blur-xl border-foreground/10 focus:border-primary/50 focus:ring-4 focus:ring-primary/5 shadow-inner" 
-          placeholder="Tìm kiếm theo tên lớp, niên khóa hoặc chuyên ngành..." 
+          placeholder="Tìm kiếm theo tên lớp, năm học hoặc chuyên ngành..." 
           value={searchTerm}
           onChange={(e) => updateFilter('classes', { searchTerm: e.target.value })}
         />

@@ -1,10 +1,11 @@
-import React, { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import * as XLSX from 'xlsx';
 import { 
   FileUp, FileDown, CheckCircle2, AlertTriangle, 
-  XCircle, Database, Download, Trash2, 
-  Info, Check
+  XCircle, Database, Trash2, 
+  Cloud, RefreshCw, Search, History,
+  FileJson, CloudUpload, CloudDownload, Calendar
 } from 'lucide-react';
 import { db } from '../db/db';
 import { Button } from '../components/ui/Button';
@@ -12,6 +13,8 @@ import { Card } from '../components/ui/Card';
 import { motion, AnimatePresence } from 'framer-motion';
 import { clsx } from 'clsx';
 import { PageHeader } from '../components/ui/PageHeader';
+import { googleDriveService } from '../services/googleDrive.service';
+import { backupService } from '../services/backup.service';
 
 type Category = 'classes' | 'students' | 'teachers' | 'subjects' | 'sections' | 'sessions';
 
@@ -34,12 +37,16 @@ const CATEGORIES: { id: Category; label: string; icon: any }[] = [
 ];
 
 export const DataManagement = () => {
-  const [activeTab, setActiveTab] = useState<'import' | 'export'>('import');
+  const [activeTab, setActiveTab] = useState<'import' | 'export' | 'cloud'>('import');
   const [selectedCategory, setSelectedCategory] = useState<Category>('classes');
   const [importData, setImportData] = useState<ValidationResult[]>([]);
   const [isProcessing, setIsProcessing] = useState(false);
   const [exportSelection, setExportSelection] = useState<Set<Category>>(new Set());
   const [isConfirmingDelete, setIsConfirmingDelete] = useState(false);
+  
+  // Cloud Sync State
+  const [cloudFiles, setCloudFiles] = useState<any[]>([]);
+  const [isSyncing, setIsSyncing] = useState(false);
 
   // Lấy dữ liệu từ DB để validation
   const dbClasses = useLiveQuery(() => db.classes.toArray());
@@ -48,6 +55,63 @@ export const DataManagement = () => {
   const dbSubjects = useLiveQuery(() => db.subjects.toArray());
   const dbSections = useLiveQuery(() => db.sections.toArray());
 
+  // Cloud Sync Logic
+  const fetchCloudFiles = async () => {
+    try {
+      setIsSyncing(true);
+      const files = await googleDriveService.listFiles('application/json');
+      setCloudFiles(files.sort((a, b) => new Date(b.createdTime).getTime() - new Date(a.createdTime).getTime()));
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setIsSyncing(false);
+    }
+  };
+
+  const handleCloudBackup = async () => {
+    setIsSyncing(true);
+    try {
+      const content = await backupService.exportData();
+      const fileName = `SnapAttend_Sync_${new Date().toISOString().replace(/[:.]/g, '-')}.json`;
+      await googleDriveService.uploadFile(fileName, content);
+      alert('Đã sao lưu lên Google Drive thành công!');
+      fetchCloudFiles();
+    } catch (error) {
+      console.error(error);
+      alert('Lỗi sao lưu: ' + (typeof error === 'string' ? error : 'Vui lòng kiểm tra kết nối Google Drive trong Cài đặt'));
+    } finally {
+      setIsSyncing(false);
+    }
+  };
+
+  const handleRestoreFromCloud = async (fileId: string) => {
+    if (!confirm('Bạn có chắc chắn muốn khôi phục dữ liệu từ bản sao lưu này? Dữ liệu hiện tại sẽ bị ghi đè.')) return;
+    
+    setIsProcessing(true);
+    try {
+      const content = await googleDriveService.downloadFile(fileId);
+      const success = await backupService.importData(content);
+      if (success) {
+        alert('Khôi phục dữ liệu thành công! Ứng dụng sẽ tải lại.');
+        window.location.reload();
+      } else {
+        alert('Khôi phục thất bại. Định dạng file không hợp lệ.');
+      }
+    } catch (error) {
+      console.error(error);
+      alert('Lỗi khi tải file từ Drive.');
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  useEffect(() => {
+    if (activeTab === 'cloud') {
+      fetchCloudFiles();
+    }
+  }, [activeTab]);
+
+  // Excel Logic
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) processFile(file);
@@ -415,122 +479,172 @@ export const DataManagement = () => {
         ]}
       />
 
-      <div className="flex gap-2 p-1 bg-foreground/5 rounded-2xl w-fit">
-        <button 
+      {/* Tab Switcher */}
+      <div className="flex p-1 bg-foreground/5 rounded-2xl w-fit mb-8">
+        <button
           onClick={() => setActiveTab('import')}
           className={clsx(
-            "flex items-center gap-2 px-6 py-2.5 rounded-xl transition-all font-black text-xs uppercase tracking-widest",
-            activeTab === 'import' ? "bg-primary text-foreground shadow-lg shadow-primary/20" : "text-foreground/40 hover:text-foreground"
+            "flex items-center gap-2 px-6 py-3 rounded-xl font-bold transition-all",
+            activeTab === 'import' ? "bg-background text-primary shadow-sm" : "text-foreground/40 hover:text-foreground"
           )}
         >
-          <FileUp className="w-4 h-4" /> Import Excel
+          <FileUp className="w-4 h-4" />
+          Nhập Excel
         </button>
-        <button 
+        <button
           onClick={() => setActiveTab('export')}
           className={clsx(
-            "flex items-center gap-2 px-6 py-2.5 rounded-xl transition-all font-black text-xs uppercase tracking-widest",
-            activeTab === 'export' ? "bg-primary text-foreground shadow-lg shadow-primary/20" : "text-foreground/40 hover:text-foreground"
+            "flex items-center gap-2 px-6 py-3 rounded-xl font-bold transition-all",
+            activeTab === 'export' ? "bg-background text-primary shadow-sm" : "text-foreground/40 hover:text-foreground"
           )}
         >
-          <FileDown className="w-4 h-4" /> Export Excel
+          <FileDown className="w-4 h-4" />
+          Xuất dữ liệu
+        </button>
+        <button
+          onClick={() => setActiveTab('cloud')}
+          className={clsx(
+            "flex items-center gap-2 px-6 py-3 rounded-xl font-bold transition-all",
+            activeTab === 'cloud' ? "bg-background text-primary shadow-sm" : "text-foreground/40 hover:text-foreground"
+          )}
+        >
+          <Cloud className="w-4 h-4" />
+          Đám mây
         </button>
       </div>
 
       <AnimatePresence mode="wait">
         {activeTab === 'import' ? (
-          <motion.div key="import" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} className="space-y-6">
-            <Card className="p-8 bg-background-light/50 backdrop-blur-3xl border-foreground/5">
-              <div className="flex flex-col md:flex-row gap-12">
-                <div className="w-full md:w-1/3 space-y-6">
-                  <h3 className="text-foreground font-black text-sm uppercase tracking-widest flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-lg bg-primary/20 flex items-center justify-center text-primary">1</div>
-                    Chọn danh mục
-                  </h3>
-                  <div className="grid grid-cols-1 gap-2.5">
-                    {CATEGORIES.map(cat => (
-                      <button
-                        key={cat.id}
-                        onClick={() => { setSelectedCategory(cat.id); setImportData([]); }}
-                        className={clsx(
-                          "w-full flex items-center justify-between p-4 rounded-2xl border transition-all text-sm font-bold",
-                          selectedCategory === cat.id 
-                            ? "bg-primary/10 border-primary/50 text-primary shadow-lg shadow-primary/5" 
-                            : "bg-foreground/5 border-transparent text-foreground/40 hover:bg-foreground/10 hover:text-foreground/60"
-                        )}
-                      >
-                        {cat.label}
-                        {selectedCategory === cat.id && <Check className="w-4 h-4" />}
-                      </button>
-                    ))}
+          <motion.div
+            key="import-tab"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            className="space-y-8"
+          >
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+              <Card className="lg:col-span-1 border-none shadow-none">
+                <div className="flex items-center gap-3 mb-6">
+                  <div className="p-2 bg-primary/10 rounded-lg">
+                    <Database className="w-5 h-5 text-primary" />
                   </div>
+                  <h3 className="text-lg font-bold text-foreground">Chọn danh mục</h3>
                 </div>
-
-                <div className="w-full md:w-2/3 space-y-6">
-                  <h3 className="text-foreground font-black text-sm uppercase tracking-widest flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-lg bg-primary/20 flex items-center justify-center text-primary">2</div>
-                    Tải tệp nguồn
-                  </h3>
-                  <label 
-                    onDragOver={handleDragOver} onDrop={handleDrop}
-                    className="flex flex-col items-center justify-center w-full h-80 border-2 border-dashed border-foreground/10 rounded-[2.5rem] cursor-pointer hover:bg-primary/5 hover:border-primary/30 transition-all group overflow-hidden relative"
-                  >
-                    <div className="flex flex-col items-center justify-center pt-5 pb-6 relative z-10">
-                      <div className="w-20 h-20 rounded-3xl bg-primary/10 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-500 shadow-inner">
-                        <FileUp className="w-10 h-10 text-primary" />
+                <div className="space-y-2">
+                  {CATEGORIES.map((cat) => (
+                    <button
+                      key={cat.id}
+                      onClick={() => {
+                        setSelectedCategory(cat.id);
+                        setImportData([]);
+                      }}
+                      className={clsx(
+                        "w-full flex items-center justify-between px-4 py-3 rounded-xl font-bold transition-all border",
+                        selectedCategory === cat.id 
+                          ? "bg-primary/5 border-primary text-primary" 
+                          : "bg-background border-foreground/5 text-foreground/40 hover:border-primary/30"
+                      )}
+                    >
+                      <div className="flex items-center gap-3">
+                        <cat.icon className="w-4 h-4" />
+                        {cat.label}
                       </div>
-                      <p className="mb-2 text-lg text-foreground font-black tracking-tight">Kéo thả hoặc Nhấn để chọn tệp</p>
-                      <p className="text-xs text-foreground/30 font-bold uppercase tracking-widest">Hỗ trợ .XLSX, .XLS</p>
-                    </div>
-                    <input type="file" className="hidden" accept=".xlsx, .xls" onChange={handleFileSelect} disabled={isProcessing} />
-                    
-                    {/* Decorative gradient */}
-                    <div className="absolute inset-x-0 bottom-0 h-1 bg-gradient-to-r from-transparent via-primary/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-                  </label>
+                      {selectedCategory === cat.id && <CheckCircle2 className="w-4 h-4" />}
+                    </button>
+                  ))}
                 </div>
-              </div>
-            </Card>
+              </Card>
+
+              <Card className="lg:col-span-2 border-none shadow-none flex flex-col items-center justify-center p-12 text-center">
+                <div 
+                  className={clsx(
+                    "w-full max-w-md p-12 rounded-3xl border-2 border-dashed transition-all cursor-pointer group",
+                    importData.length > 0 
+                      ? "border-green-500/30 bg-green-500/5" 
+                      : "border-foreground/10 hover:border-primary/30 hover:bg-primary/5"
+                  )}
+                  onDragOver={handleDragOver}
+                  onDrop={handleDrop}
+                  onClick={() => document.getElementById('excel-upload')?.click()}
+                >
+                  <input 
+                    id="excel-upload" 
+                    type="file" 
+                    className="hidden" 
+                    accept=".xlsx, .xls"
+                    onChange={handleFileSelect}
+                  />
+                  {isProcessing ? (
+                    <RefreshCw className="w-16 h-16 text-primary animate-spin mx-auto mb-6" />
+                  ) : importData.length > 0 ? (
+                    <CheckCircle2 className="w-16 h-16 text-green-500 mx-auto mb-6" />
+                  ) : (
+                    <FileUp className="w-16 h-16 text-foreground/10 group-hover:text-primary/40 mx-auto mb-6 transition-colors" />
+                  )}
+                  <h3 className="text-xl font-bold text-foreground mb-2">
+                    {importData.length > 0 ? 'Tệp đã sẵn sàng' : 'Tải lên tệp Excel'}
+                  </h3>
+                  <p className="text-foreground/40 text-sm mb-6">
+                    Kéo thả hoặc nhấn để chọn tệp .xlsx mẫu tương ứng với danh mục
+                  </p>
+                  {importData.length > 0 && (
+                    <Button variant="secondary" onClick={(e) => {
+                      e.stopPropagation();
+                      setImportData([]);
+                    }}>
+                      <Trash2 className="w-4 h-4" />
+                      Chọn tệp khác
+                    </Button>
+                  )}
+                </div>
+              </Card>
+            </div>
 
             {importData.length > 0 && (
               <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-4">
                 <div className="flex items-center justify-between bg-foreground/5 p-4 rounded-3xl border border-foreground/5">
-                  <h3 className="text-sm font-black text-foreground uppercase tracking-widest ml-2">
-                    Bản xem trước: {CATEGORIES.find(c => c.id === selectedCategory)?.label}
-                  </h3>
+                  <div className="flex gap-8 px-4">
+                    <StatItem color="bg-primary" label="Tổng" count={stats.total} />
+                    <StatItem color="bg-green-500" label="Hợp lệ" count={stats.ok} />
+                    <StatItem color="bg-yellow-500" label="Cảnh báo" count={stats.warning} />
+                    <StatItem color="bg-red-500" label="Lỗi" count={stats.error} />
+                  </div>
                   <div className="flex gap-2">
-                    <Button variant="ghost" className="text-xs font-black uppercase text-red-500 hover:bg-red-500/10" onClick={() => setImportData([])}>
-                      <Trash2 className="w-4 h-4 mr-2" /> Hủy
-                    </Button>
-                    <Button className="text-xs font-black uppercase shadow-lg shadow-primary/20" onClick={handleImport} disabled={isProcessing || stats.ok + stats.warning === 0}>
-                      <CheckCircle2 className="w-4 h-4 mr-2" /> Xác nhận nhập
+                    <Button variant="ghost" onClick={() => setImportData([])}>Hủy</Button>
+                    <Button 
+                      disabled={stats.ok + stats.warning === 0 || isProcessing}
+                      onClick={handleImport}
+                    >
+                      <CheckCircle2 className="w-4 h-4" />
+                      Nhập dữ liệu
                     </Button>
                   </div>
                 </div>
 
-                <div className="glass-card overflow-hidden rounded-[2.5rem] border border-foreground/10 shadow-2xl">
-                  <div className="max-h-[600px] overflow-auto custom-scrollbar">
-                    <table className="w-full text-left border-collapse">
-                      <thead className="sticky top-0 bg-background-light/95 backdrop-blur-md z-10">
-                        <tr className="border-b border-foreground/5">
-                          <th className="p-5 text-[10px] font-black text-foreground/40 uppercase tracking-widest pl-8">Trạng thái</th>
+                <div className="glass-card rounded-3xl overflow-hidden border border-foreground/10">
+                  <div className="max-h-[500px] overflow-auto">
+                    <table className="w-full text-left text-sm">
+                      <thead className="bg-foreground/5 sticky top-0">
+                        <tr>
+                          <th className="p-4 font-bold">Dòng</th>
+                          <th className="p-4 font-bold">Trạng thái</th>
                           {Object.keys(importData[0].row).map(key => (
-                            <th key={key} className="p-5 text-[10px] font-black text-foreground/40 uppercase tracking-widest">{key}</th>
+                            <th key={key} className="p-4 font-bold">{key}</th>
                           ))}
                         </tr>
                       </thead>
                       <tbody>
                         {importData.map((res, idx) => (
-                          <tr key={idx} className="border-b border-foreground/5 hover:bg-primary/5 transition-colors group">
-                            <td className="p-5 pl-8">
-                              {res.status === 'ok' && <CheckCircle2 className="w-5 h-5 text-green-500 shadow-sm" />}
-                              {res.status === 'warning' && <AlertTriangle className="w-5 h-5 text-yellow-500 shadow-sm" />}
-                              {res.status === 'error' && <XCircle className="w-5 h-5 text-red-500 shadow-sm" />}
+                          <tr key={idx} className="border-b border-foreground/5 hover:bg-foreground/5">
+                            <td className="p-4 text-foreground/40">{idx + 1}</td>
+                            <td className="p-4">
+                              {res.status === 'ok' && <CheckCircle2 className="w-5 h-5 text-green-500" />}
+                              {res.status === 'warning' && <AlertTriangle className="w-5 h-5 text-yellow-500" />}
+                              {res.status === 'error' && <XCircle className="w-5 h-5 text-red-500" />}
                             </td>
-                            {Object.entries(res.row).map(([key, value], vIdx) => (
-                              <td key={vIdx} className={clsx(
-                                "p-5 text-sm transition-all",
-                                res.invalidFields.includes(key) ? "text-red-500 font-black bg-red-500/5" : "text-foreground/70"
-                              )}>
-                                {value?.toString()}
+                            {Object.entries(res.row).map(([key, val], vIdx) => (
+                              <td key={vIdx} className={clsx("p-4", res.invalidFields.includes(key) && "text-red-500 font-bold")}>
+                                {String(val)}
                               </td>
                             ))}
                           </tr>
@@ -538,97 +652,187 @@ export const DataManagement = () => {
                       </tbody>
                     </table>
                   </div>
-
-                  <div className="p-6 bg-background-light/50 flex items-center justify-between border-t border-foreground/5">
-                    <div className="flex gap-8">
-                      <StatItem color="bg-primary/50" label="Tổng" count={stats.total} />
-                      <StatItem color="bg-green-500" label="Hợp lệ" count={stats.ok} />
-                      <StatItem color="bg-yellow-500" label="Cảnh báo" count={stats.warning} />
-                      <StatItem color="bg-red-500" label="Lỗi" count={stats.error} />
-                    </div>
-                  </div>
                 </div>
               </motion.div>
             )}
           </motion.div>
-        ) : (
-          <motion.div key="export" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} className="space-y-6">
-            <Card className="p-8 bg-background-light/50 backdrop-blur-3xl border-foreground/5">
-              <div className="space-y-8">
-                <div className="flex items-center justify-between px-2">
-                  <h3 className="text-lg font-black text-foreground tracking-tight flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-primary/20 flex items-center justify-center text-primary shadow-inner">
-                      <FileDown className="w-5 h-5" />
-                    </div>
-                    Chọn dữ liệu cần sao lưu
-                  </h3>
-                  <div className="flex gap-3">
-                    <Button variant="ghost" className="text-[10px] font-black uppercase tracking-widest text-foreground/40 hover:text-foreground" onClick={() => setExportSelection(new Set())}>Bỏ chọn tất cả</Button>
-                    <Button variant="ghost" className="text-[10px] font-black uppercase tracking-widest text-primary hover:bg-primary/10" onClick={() => setExportSelection(new Set(CATEGORIES.map(c => c.id)))}>Chọn toàn bộ</Button>
-                  </div>
+        ) : activeTab === 'export' ? (
+          <motion.div
+            key="export-tab"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            className="space-y-8"
+          >
+            <Card className="p-8 border-none shadow-none">
+              <div className="flex items-center justify-between mb-8">
+                <div>
+                  <h3 className="text-lg font-bold text-foreground">Chọn danh mục xuất</h3>
+                  <p className="text-sm text-foreground/40">Hãy chọn các danh mục bạn muốn xuất ra tệp Excel</p>
                 </div>
+                <Button 
+                  variant="secondary"
+                  onClick={() => {
+                    if (exportSelection.size === CATEGORIES.length) setExportSelection(new Set());
+                    else setExportSelection(new Set(CATEGORIES.map(c => c.id)));
+                  }}
+                >
+                  {exportSelection.size === CATEGORIES.length ? 'Bỏ chọn tất cả' : 'Chọn tất cả'}
+                </Button>
+              </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-                  {CATEGORIES.map(cat => (
-                    <button
-                      key={cat.id} onClick={() => {
-                        const newSet = new Set(exportSelection);
-                        if (newSet.has(cat.id)) newSet.delete(cat.id);
-                        else newSet.add(cat.id);
-                        setExportSelection(newSet);
-                      }}
-                      className={clsx(
-                        "flex items-center justify-between p-6 rounded-[2rem] border transition-all group relative overflow-hidden",
-                        exportSelection.has(cat.id) 
-                          ? "bg-primary/10 border-primary/50 shadow-xl shadow-primary/5" 
-                          : "bg-background-light/50 border-foreground/5 hover:border-foreground/10"
-                      )}
-                    >
-                      <div className="flex items-center gap-5 relative z-10">
-                        <div className={clsx(
-                          "w-14 h-14 rounded-2xl flex items-center justify-center transition-all duration-500 shadow-inner",
-                          exportSelection.has(cat.id) ? "bg-primary text-foreground scale-110" : "bg-foreground/5 text-foreground/20 group-hover:bg-foreground/10"
-                        )}>
-                          <Database className="w-7 h-7" />
-                        </div>
-                        <div className="text-left">
-                          <p className={clsx(
-                            "font-black tracking-tight transition-colors",
-                            exportSelection.has(cat.id) ? "text-foreground" : "text-foreground/40 group-hover:text-foreground/60"
-                          )}>{cat.label}</p>
-                          <p className="text-[9px] font-black text-foreground/20 uppercase tracking-widest">Excel Sheet</p>
-                        </div>
-                      </div>
-                      {exportSelection.has(cat.id) && (
-                        <div className="w-7 h-7 rounded-full bg-primary flex items-center justify-center shadow-lg shadow-primary/20">
-                          <Check className="w-4 h-4 text-foreground" />
-                        </div>
-                      )}
-                    </button>
-                  ))}
-                </div>
-
-                <div className="pt-10 border-t border-foreground/5 flex justify-center">
-                  <Button 
-                    size="lg" className="px-16 h-16 rounded-2xl shadow-2xl shadow-primary/20 group relative overflow-hidden"
-                    onClick={handleExport} disabled={isProcessing || exportSelection.size === 0}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
+                {CATEGORIES.map((cat) => (
+                  <button
+                    key={cat.id}
+                    onClick={() => {
+                      const newSelection = new Set(exportSelection);
+                      if (newSelection.has(cat.id)) newSelection.delete(cat.id);
+                      else newSelection.add(cat.id);
+                      setExportSelection(newSelection);
+                    }}
+                    className={clsx(
+                      "flex items-center gap-4 p-6 rounded-2xl font-bold transition-all border shadow-none text-left",
+                      exportSelection.has(cat.id)
+                        ? "bg-primary/5 border-primary text-primary"
+                        : "bg-background border-foreground/5 text-foreground/40 hover:border-primary/30"
+                    )}
                   >
-                    <span className="relative z-10 flex items-center gap-3 font-black uppercase text-xs tracking-widest">
-                      <Download className="w-5 h-5" /> Tải về tệp Excel
-                    </span>
-                    <div className="absolute inset-0 bg-white/10 translate-y-full group-hover:translate-y-0 transition-transform" />
-                  </Button>
-                </div>
+                    <div className={clsx(
+                      "p-3 rounded-xl transition-colors",
+                      exportSelection.has(cat.id) ? "bg-primary/20" : "bg-foreground/5"
+                    )}>
+                      <cat.icon className="w-6 h-6" />
+                    </div>
+                    <div className="flex-1">
+                      <div className="flex items-center justify-between">
+                        <span>{cat.label}</span>
+                        {exportSelection.has(cat.id) && <CheckCircle2 className="w-5 h-5" />}
+                      </div>
+                    </div>
+                  </button>
+                ))}
+              </div>
+
+              <div className="flex justify-end p-6 bg-primary/5 rounded-3xl">
+                <Button 
+                  size="lg" 
+                  disabled={exportSelection.size === 0 || isProcessing}
+                  onClick={handleExport}
+                  className="px-12 h-14 text-lg"
+                >
+                  {isProcessing ? <RefreshCw className="w-5 h-5 animate-spin" /> : <FileDown className="w-5 h-5" />}
+                  Xuất Excel ({exportSelection.size})
+                </Button>
               </div>
             </Card>
+          </motion.div>
+        ) : (
+          <motion.div
+            key="cloud-tab"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            className="space-y-8"
+          >
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+              <div className="lg:col-span-1 space-y-6">
+                <Card className="border-none shadow-none bg-blue-500/5 overflow-hidden">
+                  <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/10 rounded-full -mr-16 -mt-16 blur-3xl" />
+                  <div className="relative p-6">
+                    <div className="w-12 h-12 bg-blue-500/20 rounded-xl flex items-center justify-center mb-4">
+                      <Cloud className="w-6 h-6 text-blue-500" />
+                    </div>
+                    <h3 className="text-xl font-bold text-foreground mb-2">Đồng bộ hoàn hảo</h3>
+                    <p className="text-sm text-foreground/40 mb-6 leading-relaxed">
+                      Tất cả dữ liệu được đóng gói thành file JSON và lưu trữ an toàn trong thư mục bạn chọn trên Google Drive.
+                    </p>
+                    <Button 
+                      className="w-full h-12 bg-blue-500 hover:bg-blue-600 text-white shadow-xl shadow-blue-500/20"
+                      onClick={handleCloudBackup}
+                      disabled={isSyncing}
+                    >
+                      {isSyncing ? <RefreshCw className="w-4 h-4 animate-spin" /> : <CloudUpload className="w-4 h-4" />}
+                      Sao lưu lên Đám mây
+                    </Button>
+                  </div>
+                </Card>
 
-            <div className="bg-primary/5 p-6 rounded-[2rem] border border-primary/10 flex items-start gap-4 mx-4">
-              <Info className="w-6 h-6 text-primary flex-shrink-0 mt-1" />
-              <div className="space-y-1">
-                <h4 className="font-black text-sm text-foreground uppercase tracking-tight">An toàn dữ liệu tuyệt đối</h4>
-                <p className="text-xs text-foreground/40 leading-relaxed">
-                  Tất cả các tệp xuất ra đều được chuẩn hóa để có thể nhập ngược lại vào hệ thống bất cứ lúc nào. SnapAttend khuyến nghị bạn nên sao lưu dữ liệu hàng tuần.
-                </p>
+                <Card className="border-none shadow-none">
+                  <h4 className="font-bold text-foreground/60 p-4 border-b border-foreground/5 uppercase text-[10px] tracking-widest">Hướng dẫn</h4>
+                  <div className="p-4 space-y-4">
+                    <div className="flex gap-3">
+                      <div className="w-6 h-6 rounded-full bg-primary/10 text-primary flex items-center justify-center text-xs font-black">1</div>
+                      <p className="text-xs text-foreground/60 leading-relaxed">Thiết lập Client ID & API Key trong phần <b>Cài đặt</b>.</p>
+                    </div>
+                    <div className="flex gap-3">
+                      <div className="w-6 h-6 rounded-full bg-primary/10 text-primary flex items-center justify-center text-xs font-black">2</div>
+                      <p className="text-xs text-foreground/60 leading-relaxed">Chọn một thư mục chuyên biệt trên Drive để lưu dữ liệu.</p>
+                    </div>
+                    <div className="flex gap-3">
+                      <div className="w-6 h-6 rounded-full bg-primary/10 text-primary flex items-center justify-center text-xs font-black">3</div>
+                      <p className="text-xs text-foreground/60 leading-relaxed">Dữ liệu được lưu dưới dạng .json giúp khôi phục nguyên vẹn cấu trúc.</p>
+                    </div>
+                  </div>
+                </Card>
+              </div>
+
+              <div className="lg:col-span-2">
+                <Card className="h-full flex flex-col border-none shadow-none">
+                  <div className="px-6 py-4 border-b border-foreground/5 flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <History className="w-5 h-5 text-primary" />
+                      <h3 className="text-lg font-bold text-foreground">Lịch sử sao lưu trên Drive</h3>
+                    </div>
+                    <Button variant="secondary" onClick={fetchCloudFiles} disabled={isSyncing}>
+                      <RefreshCw className={clsx("w-4 h-4", isSyncing && "animate-spin")} />
+                    </Button>
+                  </div>
+                  
+                  <div className="flex-1 overflow-y-auto min-h-[400px]">
+                    {cloudFiles.length === 0 ? (
+                      <div className="h-full flex flex-col items-center justify-center text-center p-12">
+                        <div className="w-16 h-16 bg-foreground/5 rounded-full flex items-center justify-center mb-4">
+                          <Search className="w-8 h-8 text-foreground/10" />
+                        </div>
+                        <p className="text-foreground/40 font-bold">Chưa có bản sao lưu nào</p>
+                        <p className="text-xs text-foreground/20 max-w-xs mx-auto">Hãy nhấn "Sao lưu lên Đám mây" để lưu bản ghi đầu tiên</p>
+                      </div>
+                    ) : (
+                      <div className="p-4 grid grid-cols-1 gap-3">
+                        {cloudFiles.map((file) => (
+                          <div 
+                            key={file.id}
+                            className="group flex items-center justify-between p-4 bg-foreground/3 rounded-2xl border border-transparent hover:border-primary/20 hover:bg-primary/5 transition-all"
+                          >
+                            <div className="flex items-center gap-4">
+                              <div className="w-10 h-10 bg-primary/10 rounded-xl flex items-center justify-center">
+                                <FileJson className="w-5 h-5 text-primary" />
+                              </div>
+                              <div>
+                                <h5 className="text-sm font-bold text-foreground group-hover:text-primary transition-colors">{file.name}</h5>
+                                <div className="flex gap-4 mt-0.5">
+                                  <p className="text-[10px] text-foreground/40 flex items-center gap-1">
+                                    <Calendar className="w-3 h-3" />
+                                    {new Date(file.createdTime).toLocaleString('vi-VN')}
+                                  </p>
+                                  <p className="text-[10px] text-foreground/40 flex items-center gap-1">
+                                    <Database className="w-3 h-3" />
+                                    {(parseInt(file.size || '0') / 1024).toFixed(1)} KB
+                                  </p>
+                                </div>
+                              </div>
+                            </div>
+                            <Button variant="secondary" onClick={() => handleRestoreFromCloud(file.id)}>
+                              <CloudDownload className="w-4 h-4" />
+                              Khôi phục
+                            </Button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </Card>
               </div>
             </div>
           </motion.div>

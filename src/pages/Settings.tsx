@@ -1,15 +1,45 @@
-import React, { useState } from 'react';
-import { ShieldCheck, Download, Upload, Lock, RefreshCcw, Settings as SettingsIcon } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { ShieldCheck, Download, Upload, Lock, RefreshCcw, Settings as SettingsIcon, CheckCircle, Database } from 'lucide-react';
 import { PageHeader } from '../components/ui/PageHeader';
 import { Button } from '../components/ui/Button';
 import { Card } from '../components/ui/Card';
 import { Input } from '../components/ui/Input';
 import { authService } from '../services/auth.service';
 import { backupService } from '../services/backup.service';
+import { googleDriveService } from '../services/googleDrive.service';
 
 export const Settings = () => {
   const [pinData, setPinData] = useState({ old: '', new: '' });
   const [backupPassword, setBackupPassword] = useState('');
+  const [googleConfig, setGoogleConfig] = useState({ clientId: '', apiKey: '' });
+  const [folderId, setFolderId] = useState<string | null>(null);
+
+  useEffect(() => {
+    loadGoogleDriveInfo();
+  }, []);
+
+  const loadGoogleDriveInfo = async () => {
+    const config = await googleDriveService.getConfig();
+    const fid = await googleDriveService.getFolderId();
+    setGoogleConfig(config);
+    setFolderId(fid);
+  };
+
+  const handleSaveGoogleConfig = async () => {
+    await googleDriveService.saveConfig(googleConfig);
+    alert('Đã lưu cấu hình Google Drive!');
+  };
+
+  const handlePickFolder = async () => {
+    try {
+      const fid = await googleDriveService.pickFolder();
+      setFolderId(fid);
+      alert('Đã kết nối thư mục Google Drive thành công!');
+    } catch (err) {
+      console.error(err);
+      alert('Lỗi khi chọn thư mục: ' + (typeof err === 'string' ? err : 'Vui lòng kiểm tra Client ID và API Key'));
+    }
+  };
   
   const handleUpdatePin = () => {
     if (authService.verifyPin(pinData.old)) {
@@ -110,6 +140,68 @@ export const Settings = () => {
                 </Button>
                 <input id="import-file" type="file" className="hidden" accept=".json" onChange={handleImport} />
               </div>
+            </div>
+          </div>
+        </Card>
+
+        {/* Google Drive Section */}
+        <Card className="md:col-span-2">
+          <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-blue-500/10 rounded-lg">
+                <svg className="w-6 h-6 text-blue-500" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M7.71 3h8.58l5.71 10-4.29 7.5H6.29L2 13l5.71-10zM15 18l3.43-6H5.57l3.43 6h6z" />
+                </svg>
+              </div>
+              <div>
+                <h2 className="text-xl font-bold text-foreground">Google Drive Sync</h2>
+                <p className="text-xs text-foreground/40">Tự động sao lưu và đồng bộ lên đám mây</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div className="lg:col-span-2 space-y-4">
+              <Input 
+                label="Google Client ID"
+                value={googleConfig.clientId}
+                onChange={e => setGoogleConfig({...googleConfig, clientId: e.target.value})}
+                placeholder="Nhập Client ID từ Google Cloud Console"
+              />
+              <Input 
+                label="API Key"
+                value={googleConfig.apiKey}
+                onChange={e => setGoogleConfig({...googleConfig, apiKey: e.target.value})}
+                placeholder="Nhập API Key để sử dụng Folder Picker"
+              />
+              <div className="flex gap-3">
+                <Button className="flex-1" onClick={handleSaveGoogleConfig}>
+                  Lưu cấu hình
+                </Button>
+                <Button variant="secondary" className="flex-1" onClick={handlePickFolder}>
+                  {folderId ? 'Thay đổi thư mục lưu' : 'Chọn thư mục lưu'}
+                </Button>
+              </div>
+            </div>
+
+            <div className="p-4 bg-foreground/5 rounded-2xl border border-foreground/10 flex flex-col justify-center items-center text-center space-y-2">
+              {folderId ? (
+                <>
+                  <div className="w-12 h-12 bg-green-500/20 rounded-full flex items-center justify-center">
+                    <CheckCircle className="w-6 h-6 text-green-500" />
+                  </div>
+                  <p className="text-sm font-bold text-foreground">Đã kết nối</p>
+                  <p className="text-[10px] text-foreground/40 break-all px-2">ID: {folderId}</p>
+                </>
+              ) : (
+                <>
+                  <div className="w-12 h-12 bg-foreground/5 rounded-full flex items-center justify-center">
+                    <Database className="w-6 h-6 text-foreground/20" />
+                  </div>
+                  <p className="text-sm font-bold text-foreground/40">Chưa kết nối</p>
+                  <p className="text-[10px] text-foreground/20">Hãy chọn thư mục để kích hoạt</p>
+                </>
+              )}
             </div>
           </div>
         </Card>

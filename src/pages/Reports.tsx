@@ -1,6 +1,6 @@
-import { useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
-import { FileSpreadsheet, Filter, CheckCircle2, Clock, XCircle, Calendar, BookOpen, Layers, Trash2, BarChart3 } from 'lucide-react';
+import { FileSpreadsheet, Filter, CheckCircle2, Clock, XCircle, Calendar, BookOpen, Layers, Trash2, BarChart3, Cloud, RefreshCw } from 'lucide-react';
 import { db } from '../db/db';
 import { Button } from '../components/ui/Button';
 import { Card } from '../components/ui/Card';
@@ -8,6 +8,7 @@ import { Input } from '../components/ui/Input';
 import { format, parseISO } from 'date-fns';
 import { useFilter } from '../context/FilterContext';
 import { PageHeader } from '../components/ui/PageHeader';
+import { googleDriveService } from '../services/googleDrive.service';
 
 // Component hiển thị bảng điểm danh cho một Ca học cụ thể
 const SessionReportTable = ({ 
@@ -109,6 +110,7 @@ const SessionReportTable = ({
 export const Reports = () => {
   const { filters, updateFilter } = useFilter();
   const filter = filters.reports;
+  const [isSyncing, setIsSyncing] = useState(false);
   
   const setFilter = (newFilter: any) => updateFilter('reports', newFilter);
 
@@ -141,9 +143,7 @@ export const Reports = () => {
     }).sort((a, b) => b.createdAt - a.createdAt); // Mới nhất lên đầu
   }, [sessions, sections, filter]);
 
-  const handleExportCSV = () => {
-    if (!matchingSessions || matchingSessions.length === 0) return alert('Không có dữ liệu để xuất!');
-    
+  const generateCSVContent = () => {
     let csvContent = "\uFEFF"; // BOM cho UTF-8
     csvContent += "Lop hoc phan, Ca hoc, Ho ten, Ma HS, Trang thai, Ngay, Gio ghi nhan\n";
 
@@ -161,7 +161,12 @@ export const Reports = () => {
         csvContent += `"${section?.name}", "${session.startTime}-${session.endTime}", "${student?.name}", "${student?.studentCode}", "${statusText}", "${session.date}", "${timestamp}"\n`;
       });
     });
+    return csvContent;
+  };
 
+  const handleExportCSV = () => {
+    if (!matchingSessions || matchingSessions.length === 0) return alert('Không có dữ liệu để xuất!');
+    const csvContent = generateCSVContent();
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
@@ -172,6 +177,23 @@ export const Reports = () => {
     document.body.removeChild(link);
   };
 
+  const handleUploadToDrive = async () => {
+    if (!matchingSessions || matchingSessions.length === 0) return alert('Không có dữ liệu để tải lên!');
+    
+    setIsSyncing(true);
+    try {
+      const csvContent = generateCSVContent();
+      const fileName = `Bao_cao_SnapAttend_${format(new Date(), 'yyyyMMdd_HHmm')}.csv`;
+      await googleDriveService.uploadFile(fileName, csvContent, 'text/csv');
+      alert('Đã tải báo cáo lên Google Drive thành công!');
+    } catch (error) {
+      console.error(error);
+      alert('Lỗi khi tải lên Drive: ' + (typeof error === 'string' ? error : 'Vui lòng kiểm tra cấu hình trong Cài đặt'));
+    } finally {
+      setIsSyncing(false);
+    }
+  };
+
   return (
     <div className="space-y-8 pb-20">
       <PageHeader
@@ -179,10 +201,16 @@ export const Reports = () => {
         description="Truy vấn và xuất dữ liệu thống kê chi tiết theo bộ lọc."
         icon={<BarChart3 className="w-8 h-8" />}
       >
-        <Button onClick={handleExportCSV} disabled={matchingSessions.length === 0}>
-          <FileSpreadsheet className="w-5 h-5" />
-          Xuất CSV Tổng hợp
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="secondary" onClick={handleUploadToDrive} disabled={matchingSessions.length === 0 || isSyncing}>
+            {isSyncing ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Cloud className="w-4 h-4" />}
+            Tải lên Drive
+          </Button>
+          <Button onClick={handleExportCSV} disabled={matchingSessions.length === 0}>
+            <FileSpreadsheet className="w-5 h-5" />
+            Xuất CSV
+          </Button>
+        </div>
       </PageHeader>
 
       {/* Advanced Filter Card */}

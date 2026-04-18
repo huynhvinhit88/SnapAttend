@@ -855,7 +855,7 @@ export const DataManagement = () => {
                   className="px-8 h-14 border border-primary/30 text-primary hover:bg-primary/10"
                 >
                   <CloudUpload className="w-5 h-5" />
-                  Lưu lên Drive
+                  Tải lên Drive
                 </Button>
                 <Button 
                   size="lg" 

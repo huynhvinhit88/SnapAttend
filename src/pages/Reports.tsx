@@ -45,22 +45,22 @@ const SessionReportTable = ({
 
   return (
     <Card className="p-0 overflow-hidden border-primary/10 shadow-lg">
-      <div className="bg-primary/5 p-4 border-b border-white/10 flex flex-col md:flex-row md:items-center justify-between gap-2">
+      <div className="bg-primary/5 p-4 border-b border-foreground/10 flex flex-col md:flex-row md:items-center justify-between gap-2">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-xl bg-primary/20 flex items-center justify-center">
             <Layers className="w-5 h-5 text-primary" />
           </div>
           <div>
-            <h3 className="text-lg font-bold text-white">{sectionName}</h3>
-            <p className="text-white/40 text-xs font-bold uppercase tracking-widest">
+            <h3 className="text-lg font-bold text-foreground">{sectionName}</h3>
+            <p className="text-foreground/40 text-xs font-bold uppercase tracking-widest">
               {format(parseISO(session.date), 'dd/MM/yyyy')} • {session.startTime} - {session.endTime}
             </p>
           </div>
         </div>
         <div className="flex gap-4">
           <div className="text-center">
-            <p className="text-[10px] text-white/30 font-bold uppercase">Sĩ số</p>
-            <p className="text-sm font-bold text-white">{combinedData.length}</p>
+            <p className="text-[10px] text-foreground/30 font-bold uppercase">Sĩ số</p>
+            <p className="text-sm font-bold text-foreground">{combinedData.length}</p>
           </div>
           <div className="text-center">
             <p className="text-[10px] text-red-400/60 font-bold uppercase">Vắng</p>
@@ -72,20 +72,20 @@ const SessionReportTable = ({
       <div className="overflow-x-auto">
         <table className="w-full text-left border-collapse">
           <thead>
-            <tr className="bg-white/5 border-b border-white/5">
-              <th className="p-4 text-[10px] font-bold text-white/40 uppercase tracking-widest pl-6">Học sinh</th>
-              <th className="p-4 text-[10px] font-bold text-white/40 uppercase tracking-widest text-center">Mã HS</th>
-              <th className="p-4 text-[10px] font-bold text-white/40 uppercase tracking-widest text-center">Trạng thái</th>
-              <th className="p-4 text-[10px] font-bold text-white/40 uppercase tracking-widest text-right pr-6">Ghi nhận</th>
+            <tr className="bg-foreground/5 border-b border-foreground/5">
+              <th className="p-4 text-[10px] font-bold text-foreground/40 uppercase tracking-widest pl-6">Học sinh</th>
+              <th className="p-4 text-[10px] font-bold text-foreground/40 uppercase tracking-widest text-center">Mã HS</th>
+              <th className="p-4 text-[10px] font-bold text-foreground/40 uppercase tracking-widest text-center">Trạng thái</th>
+              <th className="p-4 text-[10px] font-bold text-foreground/40 uppercase tracking-widest text-right pr-6">Ghi nhận</th>
             </tr>
           </thead>
           <tbody>
             {combinedData.map((item) => (
-              <tr key={item.id} className="border-b border-white/5 hover:bg-white/5 transition-colors">
+              <tr key={item.id} className="border-b border-foreground/5 hover:bg-foreground/5 transition-colors">
                 <td className="p-4 pl-6">
-                  <span className="text-white font-medium text-sm">{item.name}</span>
+                  <span className="text-foreground font-medium text-sm">{item.name}</span>
                 </td>
-                <td className="p-4 text-center text-white/50 text-xs font-mono">{item.studentCode}</td>
+                <td className="p-4 text-center text-foreground/50 text-xs font-mono">{item.studentCode}</td>
                 <td className="p-4">
                   <div className="flex justify-center">
                     {item.status === 'present' && <span className="flex items-center gap-1.5 text-green-500 bg-green-500/10 px-2.5 py-1 rounded-full text-[9px] font-bold uppercase border border-green-500/20"><CheckCircle2 className="w-3 h-3" /> Có mặt</span>}
@@ -93,7 +93,7 @@ const SessionReportTable = ({
                     {item.status === 'absent' && <span className="flex items-center gap-1.5 text-red-500 bg-red-500/10 px-2.5 py-1 rounded-full text-[9px] font-bold uppercase border border-red-500/20"><XCircle className="w-3 h-3" /> Vắng</span>}
                   </div>
                 </td>
-                <td className="p-4 text-right text-white/20 text-[10px] pr-6">
+                <td className="p-4 text-right text-foreground/20 text-[10px] pr-6">
                   {item.isImplicit ? '-' : format(new Date(item.timestamp), 'HH:mm:ss')}
                 </td>
               </tr>
@@ -175,8 +175,8 @@ export const Reports = () => {
     <div className="space-y-8 pb-20">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-white mb-2">Báo cáo điểm danh</h1>
-          <p className="text-white/50">Truy vấn và xuất dữ liệu thống kê chi tiết theo bộ lọc.</p>
+          <h1 className="text-3xl font-bold text-foreground mb-2">Báo cáo điểm danh</h1>
+          <p className="text-foreground/50">Truy vấn và xuất dữ liệu thống kê chi tiết theo bộ lọc.</p>
         </div>
         <Button onClick={handleExportCSV} disabled={matchingSessions.length === 0}>
           <FileSpreadsheet className="w-5 h-5" />
@@ -243,10 +243,10 @@ export const Reports = () => {
         ))}
 
         {matchingSessions.length === 0 && (
-          <div className="py-24 text-center glass-card border-dashed border-white/10 rounded-3xl">
-            <Filter className="w-16 h-16 text-white/5 mx-auto mb-6" />
-            <h3 className="text-xl font-bold text-white/40 mb-2">Không tìm thấy dữ liệu</h3>
-            <p className="text-white/20 text-sm max-w-xs mx-auto">Hãy thử thay đổi điều kiện lọc (Ngày, Môn học hoặc Lớp học phần) để tìm kết quả khác.</p>
+          <div className="py-24 text-center glass-card border-dashed border-foreground/10 rounded-3xl">
+            <Filter className="w-16 h-16 text-foreground/5 mx-auto mb-6" />
+            <h3 className="text-xl font-bold text-foreground/40 mb-2">Không tìm thấy dữ liệu</h3>
+            <p className="text-foreground/20 text-sm max-w-xs mx-auto">Hãy thử thay đổi điều kiện lọc (Ngày, Môn học hoặc Lớp học phần) để tìm kết quả khác.</p>
           </div>
         )}
       </div>

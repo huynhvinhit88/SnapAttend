@@ -13,6 +13,7 @@ import { DataManagement } from './pages/DataManagement';
 import { authService } from './services/auth.service';
 import { PinLock } from './components/ui/PinLock';
 import { FilterProvider, useFilter } from './context/FilterContext';
+import { ThemeProvider } from './context/ThemeContext';
 
 function SnapAttendApp() {
   const [activePage, setActivePage] = useState('classes');
@@ -65,9 +66,11 @@ function SnapAttendApp() {
 
 function App() {
   return (
-    <FilterProvider>
-      <SnapAttendApp />
-    </FilterProvider>
+    <ThemeProvider>
+      <FilterProvider>
+        <SnapAttendApp />
+      </FilterProvider>
+    </ThemeProvider>
   );
 }
 

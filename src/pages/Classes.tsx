@@ -89,8 +89,8 @@ export const Classes = () => {
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-white mb-2">Quản lý Lớp</h1>
-          <p className="text-white/50">Danh mục các lớp học hành chính trong hệ thống.</p>
+          <h1 className="text-3xl font-bold text-foreground mb-2">Quản lý Lớp</h1>
+          <p className="text-foreground/50">Danh mục các lớp học hành chính trong hệ thống.</p>
         </div>
         <Button onClick={() => {
           setEditingId(null);
@@ -104,7 +104,7 @@ export const Classes = () => {
 
       {/* Search Bar */}
       <div className="relative">
-        <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-white/30" />
+        <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-foreground/30" />
         <Input 
           className="pl-12" 
           placeholder="Tìm kiếm theo tên lớp hoặc chuyên ngành..." 
@@ -145,19 +145,19 @@ export const Classes = () => {
                   <School className="w-6 h-6 text-primary" />
                 </div>
                 <div>
-                  <h3 className="text-xl font-bold text-white">{item.name}</h3>
+                  <h3 className="text-xl font-bold text-foreground">{item.name}</h3>
                   <p className="text-primary text-sm font-medium">{item.grade}</p>
                 </div>
               </div>
 
-              <div className="mt-6 pt-6 border-t border-white/10 grid grid-cols-2 gap-4">
+              <div className="mt-6 pt-6 border-t border-foreground/10 grid grid-cols-2 gap-4">
                 <div>
-                  <p className="text-xs text-white/30 uppercase font-bold tracking-wider">Chuyên ngành</p>
-                  <p className="text-white/80 text-sm mt-1">{item.major || 'N/A'}</p>
+                  <p className="text-xs text-foreground/30 uppercase font-bold tracking-wider">Chuyên ngành</p>
+                  <p className="text-foreground/80 text-sm mt-1">{item.major || 'N/A'}</p>
                 </div>
                 <div>
-                  <p className="text-xs text-white/30 uppercase font-bold tracking-wider">Niên khóa</p>
-                  <p className="text-white/80 text-sm mt-1">{item.academicYear}</p>
+                  <p className="text-xs text-foreground/30 uppercase font-bold tracking-wider">Niên khóa</p>
+                  <p className="text-foreground/80 text-sm mt-1">{item.academicYear}</p>
                 </div>
               </div>
             </Card>
@@ -167,9 +167,9 @@ export const Classes = () => {
 
       {/* Empty State */}
       {filteredClasses?.length === 0 && (
-        <div className="text-center py-20 px-4 bg-white/5 rounded-3xl border border-dashed border-white/10">
-          <School className="w-12 h-12 text-white/20 mx-auto mb-4" />
-          <p className="text-white/40 font-medium">Chưa có dữ liệu lớp học nào được tìm thấy.</p>
+        <div className="text-center py-20 px-4 bg-foreground/5 rounded-3xl border border-dashed border-foreground/10">
+          <School className="w-12 h-12 text-foreground/20 mx-auto mb-4" />
+          <p className="text-foreground/40 font-medium">Chưa có dữ liệu lớp học nào được tìm thấy.</p>
         </div>
       )}
 

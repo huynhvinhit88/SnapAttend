@@ -84,8 +84,8 @@ export const Teachers = () => {
     <div className="space-y-8">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-white mb-2">Danh mục Giáo viên</h1>
-          <p className="text-white/50">Quản lý danh sách giáo viên giảng dạy trong hệ thống.</p>
+          <h1 className="text-3xl font-bold text-foreground mb-2">Danh mục Giáo viên</h1>
+          <p className="text-foreground/50">Quản lý danh sách giáo viên giảng dạy trong hệ thống.</p>
         </div>
         <Button onClick={() => {
           setEditingId(null);
@@ -98,7 +98,7 @@ export const Teachers = () => {
       </div>
 
       <div className="relative">
-        <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-white/30" />
+        <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-foreground/30" />
         <Input 
           className="pl-12" 
           placeholder="Tìm kiếm theo tên hoặc mã giáo viên..." 
@@ -138,14 +138,14 @@ export const Teachers = () => {
                   <GraduationCap className="w-6 h-6 text-accent" />
                 </div>
                 <div>
-                  <h3 className="text-xl font-bold text-white">{item.name}</h3>
-                  <p className="text-white/40 text-sm">Mã: {item.teacherCode}</p>
+                  <h3 className="text-xl font-bold text-foreground">{item.name}</h3>
+                  <p className="text-foreground/40 text-sm">Mã: {item.teacherCode}</p>
                 </div>
               </div>
 
-              <div className="mt-6 pt-4 border-t border-white/10">
-                <p className="text-xs text-white/30 uppercase font-bold tracking-wider">Bộ môn</p>
-                <p className="text-white/80 mt-1">{item.department || 'Chưa xác định'}</p>
+              <div className="mt-6 pt-4 border-t border-foreground/10">
+                <p className="text-xs text-foreground/30 uppercase font-bold tracking-wider">Bộ môn</p>
+                <p className="text-foreground/80 mt-1">{item.department || 'Chưa xác định'}</p>
               </div>
             </Card>
           </motion.div>

@@ -47,8 +47,8 @@ export const Settings = () => {
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="text-3xl font-bold text-white mb-2">Cài đặt hệ thống</h1>
-        <p className="text-white/50">Quản lý bảo mật, dữ liệu và thiết lập ứng dụng.</p>
+        <h1 className="text-3xl font-bold text-foreground mb-2">Cài đặt hệ thống</h1>
+        <p className="text-foreground/50">Quản lý bảo mật, dữ liệu và thiết lập ứng dụng.</p>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
@@ -56,7 +56,7 @@ export const Settings = () => {
         <Card className="h-full">
           <div className="flex items-center gap-3 mb-6">
             <ShieldCheck className="text-primary w-6 h-6" />
-            <h2 className="text-xl font-bold text-white">Bảo mật & Mã PIN</h2>
+            <h2 className="text-xl font-bold text-foreground">Bảo mật & Mã PIN</h2>
           </div>
           
           <div className="space-y-4">
@@ -78,11 +78,11 @@ export const Settings = () => {
         <Card className="h-full">
           <div className="flex items-center gap-3 mb-6">
             <RefreshCcw className="text-accent w-6 h-6" />
-            <h2 className="text-xl font-bold text-white">Sao lưu & Khôi phục</h2>
+            <h2 className="text-xl font-bold text-foreground">Sao lưu & Khôi phục</h2>
           </div>
           
           <div className="space-y-4">
-            <p className="text-sm text-white/40 mb-4">
+            <p className="text-sm text-foreground/40 mb-4">
               Dữ liệu của bạn được lưu trữ hoàn toàn trên thiết bị này. Hãy thường xuyên sao lưu để tránh mất dữ liệu.
             </p>
             
@@ -114,8 +114,8 @@ export const Settings = () => {
         <div className="flex gap-4">
           <Lock className="w-6 h-6 text-primary shrink-0" />
           <div>
-            <h4 className="font-bold text-white mb-1">Bảo mật Hybrid</h4>
-            <p className="text-sm text-white/60">
+            <h4 className="font-bold text-foreground mb-1">Bảo mật Hybrid</h4>
+            <p className="text-sm text-foreground/60">
               Dữ liệu trên máy được bảo vệ bằng Master Key riêng biệt cho từng thiết bị. 
               Mã PIN đóng vai trò là cổng truy cập. File sao lưu có thể được đặt mật khẩu riêng 
               để chuyển đổi dữ liệu an toàn giữa các thiết bị.

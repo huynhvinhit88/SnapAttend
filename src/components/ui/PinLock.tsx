@@ -80,10 +80,10 @@ export const PinLock = ({ onSuccess }: PinLockProps) => {
           <Lock className="w-8 h-8 text-primary" />
         </div>
         
-        <h2 className="text-2xl font-bold text-white mb-2">
+        <h2 className="text-2xl font-bold text-foreground mb-2">
           {getTitle()}
         </h2>
-        <p className="text-white/40 mb-8 text-center text-sm">
+        <p className="text-foreground/40 mb-8 text-center text-sm">
           {getSubtitle()}
         </p>
 
@@ -97,7 +97,7 @@ export const PinLock = ({ onSuccess }: PinLockProps) => {
                 "w-4 h-4 rounded-full border-2 transition-all duration-200",
                 pin.length > i 
                   ? "bg-primary border-primary scale-110 shadow-[0_0_10px_rgba(99,102,241,0.5)]" 
-                  : "border-white/10"
+                  : "border-foreground/10"
               )}
             />
           ))}
@@ -125,7 +125,7 @@ export const PinLock = ({ onSuccess }: PinLockProps) => {
           </Button>
           <Button
             variant="ghost"
-            className="h-16 text-white/40"
+            className="h-16 text-foreground/40"
             onClick={handleBackspace}
           >
             <Delete className="w-6 h-6" />

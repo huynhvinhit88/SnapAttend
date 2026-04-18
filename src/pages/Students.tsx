@@ -116,8 +116,8 @@ export const Students = () => {
     <div className="space-y-8">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-white mb-2">Quản lý Học sinh</h1>
-          <p className="text-white/50">Danh sách học sinh theo từng lớp học.</p>
+          <h1 className="text-3xl font-bold text-foreground mb-2">Quản lý Học sinh</h1>
+          <p className="text-foreground/50">Danh sách học sinh theo từng lớp học.</p>
         </div>
         <Button onClick={() => {
           setEditingId(null);
@@ -171,16 +171,16 @@ export const Students = () => {
                 
                 <div className="flex items-center gap-4">
                   {item.avatar ? (
-                    <img src={item.avatar} alt={item.name} className="w-16 h-16 rounded-2xl object-cover border border-white/10" />
+                    <img src={item.avatar} alt={item.name} className="w-16 h-16 rounded-2xl object-cover border border-foreground/10" />
                   ) : (
                     <div className="w-16 h-16 bg-primary/10 rounded-2xl flex items-center justify-center text-primary font-bold text-xl">
                       {item.name.charAt(0)}
                     </div>
                   )}
                   <div>
-                    <h3 className="font-bold text-white leading-tight">{item.name}</h3>
-                    <p className="text-white/40 text-sm mt-1">MSHS: {item.studentCode}</p>
-                    <span className="inline-block mt-2 px-2 py-0.5 bg-white/5 rounded text-[10px] text-white/60 font-bold uppercase tracking-wider">
+                    <h3 className="font-bold text-foreground leading-tight">{item.name}</h3>
+                    <p className="text-foreground/40 text-sm mt-1">MSHS: {item.studentCode}</p>
+                    <span className="inline-block mt-2 px-2 py-0.5 bg-foreground/5 rounded text-[10px] text-foreground/60 font-bold uppercase tracking-wider">
                       {studentClass?.name || 'K/N'}
                     </span>
                   </div>
@@ -199,16 +199,16 @@ export const Students = () => {
         <form noValidate onSubmit={handleAddStudent} className="space-y-4">
           <div className="flex justify-center mb-6">
             <div 
-              className="relative w-24 h-24 bg-white/5 rounded-3xl border-2 border-dashed border-white/10 flex items-center justify-center cursor-pointer hover:bg-white/10 overflow-hidden"
+              className="relative w-24 h-24 bg-foreground/5 rounded-3xl border-2 border-dashed border-foreground/10 flex items-center justify-center cursor-pointer hover:bg-foreground/10 overflow-hidden"
               onClick={() => fileInputRef.current?.click()}
             >
               {formData.avatar ? (
                 <img src={formData.avatar} className="w-full h-full object-cover" alt="Preview" />
               ) : (
-                <Camera className="w-8 h-8 text-white/20" />
+                <Camera className="w-8 h-8 text-foreground/20" />
               )}
               <div className="absolute inset-0 bg-black/40 opacity-0 hover:opacity-100 transition-opacity flex items-center justify-center">
-                <Upload className="w-6 h-6 text-white" />
+                <Upload className="w-6 h-6 text-foreground" />
               </div>
               <input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={handleFileChange} />
             </div>

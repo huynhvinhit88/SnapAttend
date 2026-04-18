@@ -413,17 +413,17 @@ export const DataManagement = () => {
     <div className="space-y-8 pb-20">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-white mb-2">Quản lý Dữ liệu</h1>
-          <p className="text-white/50">Đưa dữ liệu vào hệ thống hoặc sao lưu ra tệp Excel.</p>
+          <h1 className="text-3xl font-bold text-foreground mb-2">Quản lý Dữ liệu</h1>
+          <p className="text-foreground/50">Đưa dữ liệu vào hệ thống hoặc sao lưu ra tệp Excel.</p>
         </div>
       </div>
 
-      <div className="flex gap-2 p-1 bg-white/5 rounded-2xl w-fit">
+      <div className="flex gap-2 p-1 bg-foreground/5 rounded-2xl w-fit">
         <button 
           onClick={() => setActiveTab('import')}
           className={clsx(
             "flex items-center gap-2 px-6 py-2.5 rounded-xl transition-all font-bold text-sm",
-            activeTab === 'import' ? "bg-primary text-white shadow-lg shadow-primary/20" : "text-white/40 hover:text-white"
+            activeTab === 'import' ? "bg-primary text-foreground shadow-lg shadow-primary/20" : "text-foreground/40 hover:text-foreground"
           )}
         >
           <FileUp className="w-4 h-4" />
@@ -433,7 +433,7 @@ export const DataManagement = () => {
           onClick={() => setActiveTab('export')}
           className={clsx(
             "flex items-center gap-2 px-6 py-2.5 rounded-xl transition-all font-bold text-sm",
-            activeTab === 'export' ? "bg-primary text-white shadow-lg shadow-primary/20" : "text-white/40 hover:text-white"
+            activeTab === 'export' ? "bg-primary text-foreground shadow-lg shadow-primary/20" : "text-foreground/40 hover:text-foreground"
           )}
         >
           <FileDown className="w-4 h-4" />
@@ -453,7 +453,7 @@ export const DataManagement = () => {
             <Card className="p-8">
               <div className="flex flex-col md:flex-row gap-8">
                 <div className="w-full md:w-1/3 space-y-4">
-                  <h3 className="text-white font-bold flex items-center gap-2">
+                  <h3 className="text-foreground font-bold flex items-center gap-2">
                     <Info className="w-4 h-4 text-primary" />
                     Bước 1: Chọn danh mục
                   </h3>
@@ -466,7 +466,7 @@ export const DataManagement = () => {
                           "w-full flex items-center justify-between p-3 rounded-xl border transition-all text-sm",
                           selectedCategory === cat.id 
                             ? "bg-primary/10 border-primary text-primary" 
-                            : "bg-white/5 border-white/5 text-white/50 hover:bg-white/10"
+                            : "bg-foreground/5 border-foreground/5 text-foreground/50 hover:bg-foreground/10"
                         )}
                       >
                         {cat.label}
@@ -477,21 +477,21 @@ export const DataManagement = () => {
                 </div>
 
                 <div className="w-full md:w-2/3 space-y-4">
-                  <h3 className="text-white font-bold flex items-center gap-2">
+                  <h3 className="text-foreground font-bold flex items-center gap-2">
                     <Upload className="w-4 h-4 text-primary" />
                     Bước 2: Tải tệp lên
                   </h3>
                   <label 
                     onDragOver={handleDragOver}
                     onDrop={handleDrop}
-                    className="flex flex-col items-center justify-center w-full h-64 border-2 border-dashed border-white/10 rounded-3xl cursor-pointer hover:bg-white/5 hover:border-primary/50 transition-all group"
+                    className="flex flex-col items-center justify-center w-full h-64 border-2 border-dashed border-foreground/10 rounded-3xl cursor-pointer hover:bg-foreground/5 hover:border-primary/50 transition-all group"
                   >
                     <div className="flex flex-col items-center justify-center pt-5 pb-6">
                       <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
                         <FileUp className="w-8 h-8 text-primary" />
                       </div>
-                      <p className="mb-2 text-sm text-white font-medium">Nhấn để tải hoặc kéo thả file Excel vào đây</p>
-                      <p className="text-xs text-white/30 italic">Hỗ trợ .xlsx, .xls</p>
+                      <p className="mb-2 text-sm text-foreground font-medium">Nhấn để tải hoặc kéo thả file Excel vào đây</p>
+                      <p className="text-xs text-foreground/30 italic">Hỗ trợ .xlsx, .xls</p>
                     </div>
                     <input type="file" className="hidden" accept=".xlsx, .xls" onChange={handleFileSelect} disabled={isProcessing} />
                   </label>
@@ -502,7 +502,7 @@ export const DataManagement = () => {
             {importData.length > 0 && (
               <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-4">
                 <div className="flex items-center justify-between">
-                  <h3 className="text-xl font-bold text-white flex items-center gap-2">
+                  <h3 className="text-xl font-bold text-foreground flex items-center gap-2">
                     Xem trước dữ liệu ({selectedCategory})
                   </h3>
                   <div className="flex gap-2">
@@ -517,20 +517,20 @@ export const DataManagement = () => {
                   </div>
                 </div>
 
-                <div className="glass-card overflow-hidden rounded-3xl border border-white/10">
+                <div className="glass-card overflow-hidden rounded-3xl border border-foreground/10">
                   <div className="max-h-[600px] overflow-auto custom-scrollbar">
                     <table className="w-full text-left border-collapse">
                       <thead className="sticky top-0 bg-background-light z-10 shadow-lg">
-                        <tr className="border-b border-white/10">
-                          <th className="p-4 text-[10px] font-bold text-white/40 uppercase tracking-widest pl-6">Trạng thái</th>
+                        <tr className="border-b border-foreground/10">
+                          <th className="p-4 text-[10px] font-bold text-foreground/40 uppercase tracking-widest pl-6">Trạng thái</th>
                           {Object.keys(importData[0].row).map(key => (
-                            <th key={key} className="p-4 text-[10px] font-bold text-white/40 uppercase tracking-widest">{key}</th>
+                            <th key={key} className="p-4 text-[10px] font-bold text-foreground/40 uppercase tracking-widest">{key}</th>
                           ))}
                         </tr>
                       </thead>
                       <tbody>
                         {importData.map((res, idx) => (
-                          <tr key={idx} className="border-b border-white/5 hover:bg-white/5 transition-colors group">
+                          <tr key={idx} className="border-b border-foreground/5 hover:bg-foreground/5 transition-colors group">
                             <td className="p-4 pl-6">
                               {res.status === 'ok' && <CheckCircle2 className="w-5 h-5 text-green-500" />}
                               {res.status === 'warning' && (
@@ -544,7 +544,7 @@ export const DataManagement = () => {
                               {res.status === 'error' && (
                                 <div className="relative">
                                   <XCircle className="w-5 h-5 text-red-500" />
-                                  <div className="absolute left-full ml-2 top-0 hidden group-hover:block bg-red-500 text-white text-[10px] px-2 py-1 rounded whitespace-nowrap z-20">
+                                  <div className="absolute left-full ml-2 top-0 hidden group-hover:block bg-red-500 text-foreground text-[10px] px-2 py-1 rounded whitespace-nowrap z-20">
                                     {res.errors.join(', ')}
                                   </div>
                                 </div>
@@ -553,7 +553,7 @@ export const DataManagement = () => {
                             {Object.entries(res.row).map(([key, value], vIdx) => (
                               <td key={vIdx} className={clsx(
                                 "p-4 text-sm transition-colors",
-                                res.invalidFields.includes(key) ? "text-red-500 font-bold bg-red-500/5" : "text-white/70"
+                                res.invalidFields.includes(key) ? "text-red-500 font-bold bg-red-500/5" : "text-foreground/70"
                               )}>
                                 {value?.toString()}
                               </td>
@@ -564,11 +564,11 @@ export const DataManagement = () => {
                     </table>
                   </div>
 
-                  <div className="p-4 bg-white/5 flex items-center justify-between border-t border-white/10">
+                  <div className="p-4 bg-foreground/5 flex items-center justify-between border-t border-foreground/10">
                     <div className="flex gap-6">
                       <div className="flex items-center gap-2">
-                        <div className="w-2 h-2 rounded-full bg-white/30" />
-                        <span className="text-xs text-white/40 uppercase font-bold tracking-widest">Tổng: {stats.total}</span>
+                        <div className="w-2 h-2 rounded-full bg-foreground/30" />
+                        <span className="text-xs text-foreground/40 uppercase font-bold tracking-widest">Tổng: {stats.total}</span>
                       </div>
                       <div className="flex items-center gap-2">
                         <div className="w-2 h-2 rounded-full bg-green-500" />
@@ -599,7 +599,7 @@ export const DataManagement = () => {
             <Card className="p-8">
               <div className="space-y-6">
                 <div className="flex items-center justify-between">
-                  <h3 className="text-xl font-bold text-white flex items-center gap-2">
+                  <h3 className="text-xl font-bold text-foreground flex items-center gap-2">
                     <Download className="w-5 h-5 text-primary" />
                     Chọn danh mục cần xuất
                   </h3>
@@ -618,34 +618,34 @@ export const DataManagement = () => {
                         "flex items-center justify-between p-6 rounded-3xl border transition-all group relative overflow-hidden",
                         exportSelection.has(cat.id) 
                           ? "bg-primary/10 border-primary shadow-lg shadow-primary/10" 
-                          : "bg-white/5 border-white/5 hover:border-white/10"
+                          : "bg-foreground/5 border-foreground/5 hover:border-foreground/10"
                       )}
                     >
                       <div className="flex items-center gap-4">
                         <div className={clsx(
                           "w-12 h-12 rounded-2xl flex items-center justify-center transition-colors",
-                          exportSelection.has(cat.id) ? "bg-primary text-white" : "bg-white/5 text-white/30 group-hover:bg-white/10"
+                          exportSelection.has(cat.id) ? "bg-primary text-foreground" : "bg-foreground/5 text-foreground/30 group-hover:bg-foreground/10"
                         )}>
                           <cat.icon className="w-6 h-6" />
                         </div>
                         <div className="text-left">
                           <p className={clsx(
                             "font-bold transition-colors",
-                            exportSelection.has(cat.id) ? "text-white" : "text-white/50"
+                            exportSelection.has(cat.id) ? "text-foreground" : "text-foreground/50"
                           )}>{cat.label}</p>
-                          <p className="text-[10px] text-white/20 uppercase tracking-widest font-bold">XLSX Format</p>
+                          <p className="text-[10px] text-foreground/20 uppercase tracking-widest font-bold">XLSX Format</p>
                         </div>
                       </div>
                       {exportSelection.has(cat.id) && (
                         <div className="w-6 h-6 rounded-full bg-primary flex items-center justify-center">
-                          <Check className="w-4 h-4 text-white" />
+                          <Check className="w-4 h-4 text-foreground" />
                         </div>
                       )}
                     </button>
                   ))}
                 </div>
 
-                <div className="pt-8 border-t border-white/10 flex justify-end">
+                <div className="pt-8 border-t border-foreground/10 flex justify-end">
                   <Button 
                     size="lg" 
                     className="px-12"
@@ -661,11 +661,11 @@ export const DataManagement = () => {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="glass-card p-6 border border-primary/10 rounded-3xl">
-                <h4 className="text-white font-bold mb-3 flex items-center gap-2">
+                <h4 className="text-foreground font-bold mb-3 flex items-center gap-2">
                   <Info className="w-4 h-4 text-primary" />
                   Lưu ý khi xuất tệp
                 </h4>
-                <ul className="space-y-2 text-sm text-white/40 list-disc list-inside">
+                <ul className="space-y-2 text-sm text-foreground/40 list-disc list-inside">
                   <li>Tệp xuất ra tuân thủ định dạng chuẩn để có thể import ngược lại.</li>
                   <li>Dữ liệu nhạy cảm (Tên, Mã số) sẽ được tự động giải mã khi xuất.</li>
                   <li>Mỗi danh mục được chọn sẽ là một "Sheet" riêng trong tệp Excel.</li>
@@ -687,7 +687,7 @@ export const DataManagement = () => {
           >
             <div className="text-center space-y-4">
               <div className="w-16 h-16 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto" />
-              <p className="text-white font-bold animate-pulse">Đang xử lý dữ liệu...</p>
+              <p className="text-foreground font-bold animate-pulse">Đang xử lý dữ liệu...</p>
             </div>
           </motion.div>
         )}

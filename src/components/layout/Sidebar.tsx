@@ -1,9 +1,10 @@
 import { 
   Users, BookOpen, Calendar, BarChart3, 
   Settings, Database, GraduationCap, School,
-  Layers, Lock, X
+  Layers, Lock, X, Sun, Moon
 } from 'lucide-react';
 import { clsx } from 'clsx';
+import { useTheme } from '../../context/ThemeContext';
 
 const menuItems = [
   { id: 'classes', label: 'Quản lý Lớp', icon: School },
@@ -26,6 +27,8 @@ interface SidebarProps {
 }
 
 export const Sidebar = ({ activeId, onNavigate, onLock, isOpen, onClose }: SidebarProps) => {
+  const { theme, toggleTheme } = useTheme();
+
   return (
     <>
       {/* Backdrop (Lớp phủ mờ) */}
@@ -38,19 +41,19 @@ export const Sidebar = ({ activeId, onNavigate, onLock, isOpen, onClose }: Sideb
 
       {/* Sidebar Container */}
       <div className={clsx(
-        "fixed inset-y-0 left-0 w-72 h-full bg-background-light/40 backdrop-blur-2xl border-r border-white/10 flex flex-col p-4 z-[60] transition-transform duration-300 lg:static lg:translate-x-0 lg:w-64",
+        "fixed inset-y-0 left-0 w-72 h-full bg-background-light/40 backdrop-blur-2xl border-r border-foreground/10 flex flex-col p-4 z-[60] transition-transform duration-300 lg:static lg:translate-x-0 lg:w-64",
         isOpen ? "translate-x-0" : "-translate-x-full"
       )}>
         <div className="flex items-center justify-between px-4 py-8">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center shadow-lg shadow-primary/30">
-              <Calendar className="text-white w-6 h-6" />
+            <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center shadow-lg shadow-primary/20">
+              <Calendar className="text-foreground w-6 h-6" />
             </div>
-            <h1 className="text-xl font-bold text-white tracking-tight">SnapAttend</h1>
+            <h1 className="text-xl font-bold text-foreground tracking-tight">SnapAttend</h1>
           </div>
           <button 
             onClick={onClose}
-            className="lg:hidden p-2 text-white/50 hover:text-white"
+            className="lg:hidden p-2 text-foreground/50 hover:text-foreground"
           >
             <X className="w-6 h-6" />
           </button>
@@ -64,8 +67,8 @@ export const Sidebar = ({ activeId, onNavigate, onLock, isOpen, onClose }: Sideb
             className={clsx(
               'w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all font-medium',
               activeId === item.id 
-                ? 'bg-primary text-white shadow-lg shadow-primary/20' 
-                : 'text-white/50 hover:bg-white/5 hover:text-white'
+                ? 'bg-primary text-foreground shadow-lg shadow-primary/20' 
+                : 'text-foreground/50 hover:bg-foreground/5 hover:text-foreground'
             )}
           >
             <item.icon className="w-5 h-5" />
@@ -75,20 +78,29 @@ export const Sidebar = ({ activeId, onNavigate, onLock, isOpen, onClose }: Sideb
       </nav>
 
       <div className="p-4 space-y-4">
-        <button
-          onClick={onLock}
-          className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-red-500/10 text-red-500 hover:bg-red-500/20 transition-all font-bold text-sm"
-        >
-          <Lock className="w-4 h-4" />
-          Khóa ứng dụng
-        </button>
-        <div className="p-4 bg-white/5 rounded-2xl border border-white/10">
-          <p className="text-xs text-white/40 text-center uppercase tracking-widest font-bold">
+        <div className="flex gap-2">
+          <button
+            onClick={toggleTheme}
+            className="flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-foreground/5 text-foreground hover:bg-foreground/10 transition-all font-bold text-sm border border-foreground/10"
+          >
+            {theme === 'light' ? <Moon className="w-4 h-4" /> : <Sun className="w-4 h-4" />}
+            {theme === 'light' ? 'Tối' : 'Sáng'}
+          </button>
+          <button
+            onClick={onLock}
+            className="flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-red-500/10 text-red-500 hover:bg-red-500/20 transition-all font-bold text-sm"
+          >
+            <Lock className="w-4 h-4" />
+            Khóa
+          </button>
+        </div>
+        <div className="p-4 bg-foreground/5 rounded-2xl border border-foreground/10">
+          <p className="text-xs text-foreground/40 text-center uppercase tracking-widest font-bold">
             v1.0.0
           </p>
         </div>
       </div>
     </div>
-  </>
+    </>
   );
 };

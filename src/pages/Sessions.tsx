@@ -89,8 +89,8 @@ export const Sessions = ({ onStartAttendance }: { onStartAttendance: (id: number
     <div className="space-y-8">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-white mb-2">Lịch học & Ca học</h1>
-          <p className="text-white/50">Quản lý các buổi học cụ thể và tạo lịch định kỳ.</p>
+          <h1 className="text-3xl font-bold text-foreground mb-2">Lịch học & Ca học</h1>
+          <p className="text-foreground/50">Quản lý các buổi học cụ thể và tạo lịch định kỳ.</p>
         </div>
         <Button onClick={() => setIsModalOpen(true)}>
           <Zap className="w-5 h-5 text-yellow-400" />
@@ -98,7 +98,7 @@ export const Sessions = ({ onStartAttendance }: { onStartAttendance: (id: number
         </Button>
       </div>
 
-      <Card className="p-4 flex flex-col md:flex-row items-end md:items-center gap-4 bg-white/5 border-white/10 relative overflow-hidden">
+      <Card className="p-4 flex flex-col md:flex-row items-end md:items-center gap-4 bg-foreground/5 border-foreground/10 relative overflow-hidden">
         <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full -mr-16 -mt-16 blur-3xl" />
         
         <div className="flex-1 w-full">
@@ -150,7 +150,7 @@ export const Sessions = ({ onStartAttendance }: { onStartAttendance: (id: number
               >
                 <div className="p-6">
                   <div className="flex justify-between items-start mb-4">
-                    <div className="bg-white/5 px-3 py-1 rounded-lg text-[10px] font-bold text-white/40 uppercase tracking-widest">
+                    <div className="bg-foreground/5 px-3 py-1 rounded-lg text-[10px] font-bold text-foreground/40 uppercase tracking-widest">
                       {format(dateObj, 'eeee', { locale: vi })}
                     </div>
                     <Button 
@@ -161,14 +161,14 @@ export const Sessions = ({ onStartAttendance }: { onStartAttendance: (id: number
                     </Button>
                   </div>
 
-                  <h3 className="text-lg font-bold text-white mb-1">{section?.name}</h3>
+                  <h3 className="text-lg font-bold text-foreground mb-1">{section?.name}</h3>
                   
                   <div className="flex items-center gap-4 mt-4">
                     <div className="flex items-center gap-1.5 text-primary">
                       <Calendar className="w-4 h-4" />
                       <span className="text-sm font-medium">{format(dateObj, 'dd/MM/yyyy')}</span>
                     </div>
-                    <div className="flex items-center gap-1.5 text-white/50">
+                    <div className="flex items-center gap-1.5 text-foreground/50">
                       <Clock className="w-4 h-4" />
                       <span className="text-sm font-medium">{item.startTime} - {item.endTime}</span>
                     </div>
@@ -217,8 +217,8 @@ export const Sessions = ({ onStartAttendance }: { onStartAttendance: (id: number
                   className={clsx(
                     "w-10 h-10 rounded-xl font-bold transition-all border",
                     formData.daysOfWeek.includes(d) 
-                      ? "bg-primary border-primary text-white shadow-lg shadow-primary/20" 
-                      : "bg-white/5 border-white/10 text-white/40",
+                      ? "bg-primary border-primary text-foreground shadow-lg shadow-primary/20" 
+                      : "bg-foreground/5 border-foreground/10 text-foreground/40",
                     errors.daysOfWeek && "border-red-500"
                   )}
                 >

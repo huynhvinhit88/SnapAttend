@@ -20,7 +20,7 @@ export const Input = React.forwardRef<HTMLInputElement & HTMLSelectElement & HTM
     const isTextarea = type === 'textarea';
 
     const inputClasses = cn(
-      'input-field',
+      'input-field placeholder:text-foreground/30',
       icon && 'pl-12', // Thêm padding trái nếu có icon
       error && 'border-red-500 focus:ring-red-500/50 focus:border-red-500',
       className

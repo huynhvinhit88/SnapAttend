@@ -71,16 +71,16 @@ export const Attendance = ({ sessionId, onBack }: AttendanceProps) => {
           <ChevronLeft className="w-6 h-6" />
         </Button>
         <div>
-          <h1 className="text-2xl font-bold text-white leading-tight">{section?.name}</h1>
-          <p className="text-white/40 text-sm">{session?.date} • {session?.startTime} - {session?.endTime}</p>
+          <h1 className="text-2xl font-bold text-foreground leading-tight">{section?.name}</h1>
+          <p className="text-foreground/40 text-sm">{session?.date} • {session?.startTime} - {session?.endTime}</p>
         </div>
       </div>
 
       {/* Stats Ribbon */}
       <div className="grid grid-cols-4 gap-2">
-        <div className="bg-white/5 p-3 rounded-2xl border border-white/5 text-center">
-          <p className="text-[10px] text-white/40 font-bold uppercase mb-1">Tổng</p>
-          <p className="text-xl font-bold text-white">{stats.total}</p>
+        <div className="bg-foreground/5 p-3 rounded-2xl border border-foreground/5 text-center">
+          <p className="text-[10px] text-foreground/40 font-bold uppercase mb-1">Tổng</p>
+          <p className="text-xl font-bold text-foreground">{stats.total}</p>
         </div>
         <div className="bg-green-500/10 p-3 rounded-2xl border border-green-500/10 text-center">
           <p className="text-[10px] text-green-500/60 font-bold uppercase mb-1">Có mặt</p>
@@ -117,9 +117,9 @@ export const Attendance = ({ sessionId, onBack }: AttendanceProps) => {
               )}>
                 <div className="relative mb-3">
                   {student?.avatar ? (
-                    <img src={student.avatar} className="w-16 h-16 rounded-full object-cover border-2 border-white/10" alt="" />
+                    <img src={student.avatar} className="w-16 h-16 rounded-full object-cover border-2 border-foreground/10" alt="" />
                   ) : (
-                    <div className="w-16 h-16 bg-white/10 rounded-full flex items-center justify-center text-white/40 text-xl font-bold">
+                    <div className="w-16 h-16 bg-foreground/10 rounded-full flex items-center justify-center text-foreground/40 text-xl font-bold">
                       {student?.name.charAt(0)}
                     </div>
                   )}
@@ -136,8 +136,8 @@ export const Attendance = ({ sessionId, onBack }: AttendanceProps) => {
                   </AnimatePresence>
                 </div>
 
-                <p className="text-sm font-bold text-white text-center line-clamp-1">{student?.name}</p>
-                <p className="text-[10px] text-white/30 font-bold uppercase mt-1">{student?.studentCode}</p>
+                <p className="text-sm font-bold text-foreground text-center line-clamp-1">{student?.name}</p>
+                <p className="text-[10px] text-foreground/30 font-bold uppercase mt-1">{student?.studentCode}</p>
               </Card>
             </motion.div>
           );
@@ -145,12 +145,12 @@ export const Attendance = ({ sessionId, onBack }: AttendanceProps) => {
       </div>
 
       {/* Floating Action Bar */}
-      <div className="fixed bottom-6 left-1/2 -translate-x-1/2 flex items-center gap-4 bg-background-light/80 backdrop-blur-xl border border-white/10 px-6 py-3 rounded-full shadow-2xl z-40">
-        <div className="flex items-center gap-2 text-white/50 text-xs font-medium">
+      <div className="fixed bottom-6 left-1/2 -translate-x-1/2 flex items-center gap-4 bg-background-light/80 backdrop-blur-xl border border-foreground/10 px-6 py-3 rounded-full shadow-2xl z-40">
+        <div className="flex items-center gap-2 text-foreground/50 text-xs font-medium">
           <Info className="w-4 h-4" />
           <span>Chạm vào học sinh để đổi trạng thái</span>
         </div>
-        <div className="w-px h-6 bg-white/10" />
+        <div className="w-px h-6 bg-foreground/10" />
         <Button 
           variant="ghost" 
           className="text-primary text-xs font-bold uppercase tracking-widest p-1"

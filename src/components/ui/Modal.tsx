@@ -29,8 +29,8 @@ export const Modal = ({ isOpen, onClose, title, children }: ModalProps) => {
             exit={{ scale: 0.9, opacity: 0, y: 20 }}
             className="relative w-full max-w-lg glass-card p-0 overflow-hidden"
           >
-            <div className="flex items-center justify-between p-6 border-b border-white/10">
-              <h2 className="text-xl font-semibold text-white">{title}</h2>
+            <div className="flex items-center justify-between p-6 border-b border-foreground/10">
+              <h2 className="text-xl font-semibold text-foreground">{title}</h2>
               <Button variant="ghost" className="p-1" onClick={onClose}>
                 <X className="w-6 h-6" />
               </Button>

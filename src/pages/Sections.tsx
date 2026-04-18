@@ -140,8 +140,8 @@ export const Sections = () => {
     <div className="space-y-8">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-white mb-2">Lớp học phần</h1>
-          <p className="text-white/50">Quản lý nhóm học sinh đăng ký theo từng môn học.</p>
+          <h1 className="text-3xl font-bold text-foreground mb-2">Lớp học phần</h1>
+          <p className="text-foreground/50">Quản lý nhóm học sinh đăng ký theo từng môn học.</p>
         </div>
         <Button onClick={() => {
           setEditingId(null);
@@ -154,7 +154,7 @@ export const Sections = () => {
       </div>
 
       <div className="relative">
-        <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-white/30" />
+        <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-foreground/30" />
         <Input 
           className="pl-12" 
           placeholder="Tìm kiếm lớp học phần..." 
@@ -197,17 +197,17 @@ export const Sections = () => {
                   </div>
                 </div>
 
-                <h3 className="text-xl font-bold text-white mb-1">{item.name}</h3>
-                <p className="text-white/60 text-sm mb-4">{subject?.name} • {teacher?.name}</p>
+                <h3 className="text-xl font-bold text-foreground mb-1">{item.name}</h3>
+                <p className="text-foreground/60 text-sm mb-4">{subject?.name} • {teacher?.name}</p>
 
-                <div className="flex items-center justify-between pt-4 border-t border-white/10">
-                  <div className="flex items-center gap-2 text-white/40 text-xs font-bold uppercase tracking-wider">
+                <div className="flex items-center justify-between pt-4 border-t border-foreground/10">
+                  <div className="flex items-center gap-2 text-foreground/40 text-xs font-bold uppercase tracking-wider">
                     <Users className="w-4 h-4" />
                     {studentCount} Học sinh
                   </div>
                   <div className="flex flex-col items-end">
-                    <span className="text-xs text-white/30">{item.semester}</span>
-                    <span className="text-[10px] text-white/20 font-bold">{item.schoolYear}</span>
+                    <span className="text-xs text-foreground/30">{item.semester}</span>
+                    <span className="text-[10px] text-foreground/20 font-bold">{item.schoolYear}</span>
                   </div>
                 </div>
               </Card>
@@ -272,10 +272,10 @@ export const Sections = () => {
         title="Ghi danh học sinh"
       >
         <div className="space-y-6">
-          <p className="text-white/60 text-sm italic border-l-2 border-primary pl-3">Chọn học sinh tham gia lớp học phần này. Bạn có thể chọn nhanh theo lớp hành chính.</p>
+          <p className="text-foreground/60 text-sm italic border-l-2 border-primary pl-3">Chọn học sinh tham gia lớp học phần này. Bạn có thể chọn nhanh theo lớp hành chính.</p>
           
           <div className="relative">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-white/30" />
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-foreground/30" />
             <Input 
               className="pl-10 h-10 text-sm" 
               placeholder="Tìm kiếm lớp hành chính..." 
@@ -293,7 +293,7 @@ export const Sections = () => {
               
               return (
                 <div key={cls.id} className="space-y-2">
-                  <div className="flex items-center justify-between sticky top-0 bg-background-light py-2 border-b border-white/5 z-10">
+                  <div className="flex items-center justify-between sticky top-0 bg-background-light py-2 border-b border-foreground/5 z-10">
                     <span className="text-sm font-bold text-primary uppercase tracking-wider">{cls.name}</span>
                     <Button 
                       variant="ghost" className="text-xs h-8 hover:bg-primary/10"
@@ -306,8 +306,8 @@ export const Sections = () => {
                     {classStudents.map(s => {
                       const isEnrolled = enrollments?.some(e => e.sectionId === selectedSectionId && e.studentId === s.id);
                       return (
-                        <div key={s.id} className="flex items-center justify-between p-3 rounded-xl bg-white/5 border border-white/5 hover:border-white/10 transition-colors">
-                          <span className="text-white/80">{s.name} <span className="text-xs text-white/30 ml-2">({s.studentCode})</span></span>
+                        <div key={s.id} className="flex items-center justify-between p-3 rounded-xl bg-foreground/5 border border-foreground/5 hover:border-foreground/10 transition-colors">
+                          <span className="text-foreground/80">{s.name} <span className="text-xs text-foreground/30 ml-2">({s.studentCode})</span></span>
                           {isEnrolled ? (
                             <span className="text-[10px] text-green-500 font-bold uppercase tracking-wider bg-green-500/10 px-2 py-1 rounded-full">Đã ghi danh</span>
                           ) : (
@@ -336,7 +336,7 @@ export const Sections = () => {
 
               return (
                 <div className="space-y-2 pt-4">
-                  <div className="flex items-center justify-between sticky top-0 bg-background-light py-2 border-b border-white/5 z-10">
+                  <div className="flex items-center justify-between sticky top-0 bg-background-light py-2 border-b border-foreground/5 z-10">
                     <div className="flex items-center gap-2">
                       <span className="text-sm font-bold text-yellow-500 uppercase tracking-wider">{unassignedTitle}</span>
                       <span className="text-[10px] bg-yellow-500/10 text-yellow-500 px-2 py-0.5 rounded-full font-bold">Lưu ý</span>
@@ -352,8 +352,8 @@ export const Sections = () => {
                     {unassignedStudents.map(s => {
                       const isEnrolled = enrollments?.some(e => e.sectionId === selectedSectionId && e.studentId === s.id);
                       return (
-                        <div key={s.id} className="flex items-center justify-between p-3 rounded-xl bg-white/5 border border-dashed border-white/10 hover:border-white/20 transition-colors">
-                          <span className="text-white/80">{s.name} <span className="text-xs text-white/30 ml-2">({s.studentCode})</span></span>
+                        <div key={s.id} className="flex items-center justify-between p-3 rounded-xl bg-foreground/5 border border-dashed border-foreground/10 hover:border-foreground/20 transition-colors">
+                          <span className="text-foreground/80">{s.name} <span className="text-xs text-foreground/30 ml-2">({s.studentCode})</span></span>
                           {isEnrolled ? (
                             <span className="text-[10px] text-green-500 font-bold uppercase tracking-wider bg-green-500/10 px-2 py-1 rounded-full">Đã ghi danh</span>
                           ) : (
@@ -367,7 +367,7 @@ export const Sections = () => {
               );
             })()}
           </div>
-          <div className="pt-4 border-t border-white/10">
+          <div className="pt-4 border-t border-foreground/10">
             <Button className="w-full" onClick={() => setIsMapModalOpen(false)}>
               Hoàn tất ghi danh
             </Button>
@@ -384,14 +384,14 @@ export const Sections = () => {
               if (!student) return null;
 
               return (
-                <div key={enrollment.id} className="flex items-center justify-between p-3 rounded-xl bg-white/5 border border-white/5 group">
+                <div key={enrollment.id} className="flex items-center justify-between p-3 rounded-xl bg-foreground/5 border border-foreground/5 group">
                   <div className="flex items-center gap-3">
                     <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-xs font-bold text-primary">
                       {student.name.charAt(0)}
                     </div>
                     <div>
-                      <p className="text-white text-sm font-medium">{student.name}</p>
-                      <p className="text-white/40 text-[10px] font-bold uppercase">{student.studentCode}</p>
+                      <p className="text-foreground text-sm font-medium">{student.name}</p>
+                      <p className="text-foreground/40 text-[10px] font-bold uppercase">{student.studentCode}</p>
                     </div>
                   </div>
                   <Button 
@@ -407,12 +407,12 @@ export const Sections = () => {
             
             {enrollments?.filter(e => e.sectionId === selectedSectionId).length === 0 && (
               <div className="text-center py-10">
-                <Users className="w-12 h-12 text-white/5 mx-auto mb-3" />
-                <p className="text-white/40 text-sm italic">Lớp học phần này chưa có học sinh nào.</p>
+                <Users className="w-12 h-12 text-foreground/5 mx-auto mb-3" />
+                <p className="text-foreground/40 text-sm italic">Lớp học phần này chưa có học sinh nào.</p>
               </div>
             )}
           </div>
-          <div className="pt-4 border-t border-white/10">
+          <div className="pt-4 border-t border-foreground/10">
             <Button variant="secondary" className="w-full" onClick={() => setIsViewStudentsModalOpen(false)}>
               Đóng
             </Button>

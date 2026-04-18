@@ -87,8 +87,8 @@ export const Subjects = () => {
     <div className="space-y-8">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-white mb-2">Quản lý Môn học</h1>
-          <p className="text-white/50">Danh mục các môn học/tiết học trong chương trình.</p>
+          <h1 className="text-3xl font-bold text-foreground mb-2">Quản lý Môn học</h1>
+          <p className="text-foreground/50">Danh mục các môn học/tiết học trong chương trình.</p>
         </div>
         <Button onClick={() => {
           setEditingId(null);
@@ -133,13 +133,13 @@ export const Subjects = () => {
                   <BookOpen className="w-6 h-6 text-indigo-400" />
                 </div>
                 <div>
-                  <h3 className="text-lg font-bold text-white">{item.name}</h3>
-                  <p className="text-white/40 text-sm">{item.code}</p>
+                  <h3 className="text-lg font-bold text-foreground">{item.name}</h3>
+                  <p className="text-foreground/40 text-sm">{item.code}</p>
                 </div>
               </div>
 
               <div className="mt-6 flex items-center justify-between">
-                <span className="px-3 py-1 bg-white/5 rounded-lg text-xs font-bold text-white/60">
+                <span className="px-3 py-1 bg-foreground/5 rounded-lg text-xs font-bold text-foreground/60">
                    {item.credits} TÍN CHỈ / TIẾT
                 </span>
               </div>

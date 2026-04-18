@@ -21,12 +21,12 @@ export class SnapAttendDB extends Dexie {
   constructor() {
     super('SnapAttendDB');
     
-    this.version(2).stores({
-      classes: '++id, name, grade',
+    this.version(3).stores({
+      classes: '++id, name, grade, academicYear',
       teachers: '++id, teacherCode',
-      students: '++id, studentCode, classId',
+      students: '++id, studentCode, classId, academicYear',
       subjects: '++id, code, name',
-      sections: '++id, subjectId, teacherId',
+      sections: '++id, subjectId, teacherId, schoolYear',
       enrollments: '++id, sectionId, studentId',
       sessions: '++id, sectionId, date',
       attendance: '++id, sessionId, studentId',

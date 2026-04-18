@@ -69,8 +69,8 @@
   }
 
   .glass-card {
-    background-color: hsla(var(--background-light) / var(--card-bg-opacity));
-    @apply backdrop-blur-xl border rounded-3xl p-6 transition-all;
+    background-color: hsla(var(--background-light) / 0.9);
+    @apply border rounded-3xl p-6;
     border-color: hsl(var(--card-border) / 0.5);
     box-shadow: 
       0 4px 6px -1px rgb(0 0 0 / 0.05), 

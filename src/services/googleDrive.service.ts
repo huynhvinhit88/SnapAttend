@@ -213,16 +213,20 @@ class GoogleDriveService {
 
   async getAuthRedirectUrl(state: string = ''): Promise<string> {
     const config = await this.getConfig();
+    // Lấy URL hiện tại, loại bỏ phần hash (#) và query (?) để có redirect_uri sạch
     const redirectUri = window.location.origin + window.location.pathname;
     const scope = 'https://www.googleapis.com/auth/drive.file';
     
-    return `https://accounts.google.com/o/oauth2/v2/auth?` +
-      `client_id=${config.clientId}` +
-      `&redirect_uri=${encodeURIComponent(redirectUri)}` +
-      `&response_type=token` +
-      `&scope=${encodeURIComponent(scope)}` +
-      `&state=${encodeURIComponent(state)}` +
-      `&prompt=consent`;
+    const params = new URLSearchParams({
+      client_id: config.clientId.trim(),
+      redirect_uri: redirectUri,
+      response_type: 'token',
+      scope: scope,
+      state: state,
+      prompt: 'consent'
+    });
+
+    return `https://accounts.google.com/o/oauth2/v2/auth?${params.toString()}`;
   }
 
   handleRedirectCallback(): string | null {

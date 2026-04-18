@@ -266,14 +266,20 @@ export const Sections = () => {
             options={[{ value: '', label: 'Chọn môn học...' }, ...(subjects?.map(s => ({ value: s.id!.toString(), label: s.name })) || [])]}
             value={formData.subjectId} 
             onChange={e => {
-              setFormData({...formData, subjectId: e.target.value});
+              setFormData({...formData, subjectId: e.target.value, teacherId: ''});
               if (errors.subjectId) setErrors({...errors, subjectId: ''});
             }}
           />
           <Input 
             label="Giáo viên phụ trách" type="select" 
             error={errors.teacherId}
-            options={[{ value: '', label: 'Chọn giáo viên...' }, ...(teachers?.map(t => ({ value: t.id!.toString(), label: t.name })) || [])]}
+            options={[
+              { value: '', label: 'Chọn giáo viên...' },
+              ...(teachers?.filter(t => {
+                const selectedSubject = subjects?.find(s => s.id === parseInt(formData.subjectId));
+                return !formData.subjectId || t.department === selectedSubject?.name;
+              }).map(t => ({ value: t.id!.toString(), label: t.name })) || [])
+            ]}
             value={formData.teacherId} 
             onChange={e => {
               setFormData({...formData, teacherId: e.target.value});

@@ -499,7 +499,8 @@ export const DataManagement = () => {
     try {
       await db.transaction('rw', [
         db.classes, db.students, db.teachers, db.subjects, 
-        db.sections, db.enrollments, db.sessions, db.attendance
+        db.sections, db.enrollments, db.sessions, db.attendance,
+        db.academicYears
       ], async () => {
         await Promise.all([
           db.classes.clear(),
@@ -509,7 +510,8 @@ export const DataManagement = () => {
           db.sections.clear(),
           db.enrollments.clear(),
           db.sessions.clear(),
-          db.attendance.clear()
+          db.attendance.clear(),
+          db.academicYears.clear()
         ]);
       });
       alert('Đã xóa toàn bộ dữ liệu thành công!');

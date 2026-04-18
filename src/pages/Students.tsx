@@ -1,4 +1,4 @@
-import React, { useState, useRef, useMemo, useEffect } from 'react';
+import React, { useState, useRef, useMemo } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { Plus, Trash2, Search, Camera, Upload, Pencil, Users, School } from 'lucide-react';
 import { db } from '../db/db';
@@ -33,15 +33,6 @@ export const Students = () => {
   const students = useLiveQuery(() => db.students.toArray());
   const classesCount = useLiveQuery(() => db.classes.count());
 
-  // Tự động điền niên khóa của lớp khi lớp được chọn
-  useEffect(() => {
-    if (formData.classId && !editingId) {
-      const selectedClass = classes?.find(c => c.id === parseInt(formData.classId));
-      if (selectedClass) {
-        setFormData(prev => ({ ...prev, academicYear: selectedClass.academicYear }));
-      }
-    }
-  }, [formData.classId, classes, editingId]);
 
   const filteredStudents = useMemo(() => {
     if (!students || !classes) return [];

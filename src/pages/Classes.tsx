@@ -24,9 +24,9 @@ export const Classes = () => {
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
 
+  const academicYears = useLiveQuery(() => db.academicYears.toArray());
   const classes = useLiveQuery(() => db.classes.toArray());
   const totalStudents = useLiveQuery(() => db.students.count());
-  const academicYears = useLiveQuery(() => db.academicYears.toArray());
   const defaultYear = useMemo(() => academicYears?.find(y => y.isDefault)?.name || '', [academicYears]);
 
   // Lọc danh sách lớp dựa trên từ khóa tìm kiếm
@@ -243,9 +243,14 @@ export const Classes = () => {
             onChange={(e) => setFormData({...formData, major: e.target.value})}
           />
           <Input 
-            label="Niên khóa (VD: 2024-2025, K15...)" 
-            value={formData.academicYear}
+            label="Năm học" 
+            type="select"
             error={errors.academicYear}
+            options={[
+              { value: '', label: 'Chọn năm học...' },
+              ...(academicYears?.map(y => ({ value: y.name, label: y.name })) || [])
+            ]}
+            value={formData.academicYear}
             onChange={(e) => {
               setFormData({...formData, academicYear: e.target.value});
               if (errors.academicYear) setErrors({...errors, academicYear: ''});

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { 
   Plus, Database, Trash2, Search, UserPlus, 
@@ -24,18 +24,6 @@ export const Sections = () => {
   const { searchTerm } = filters.sections;
   const [classSearchTerm, setClassSearchTerm] = useState('');
   const [editingId, setEditingId] = useState<number | null>(null);
-  
-  const currentYear = new Date().getFullYear();
-  const defaultYear = `${currentYear}-${currentYear + 1}`;
-
-  const [formData, setFormData] = useState({
-    name: '',
-    subjectId: '',
-    teacherId: '',
-    semester: 'Học kỳ 1',
-    schoolYear: defaultYear
-  });
-  const [errors, setErrors] = useState<Record<string, string>>({});
 
   const sections = useLiveQuery(() => db.sections.toArray());
   const sectionCount = useLiveQuery(() => db.sections.count());
@@ -45,6 +33,27 @@ export const Sections = () => {
   const students = useLiveQuery(() => db.students.toArray());
   const enrollments = useLiveQuery(() => db.enrollments.toArray());
   const classes = useLiveQuery(() => db.classes.toArray());
+  const academicYears = useLiveQuery(() => db.academicYears.toArray());
+  
+  const defaultYear = useMemo(() => academicYears?.find(y => y.isDefault)?.name || `${new Date().getFullYear()}-${new Date().getFullYear() + 1}`, [academicYears]);
+
+  const [formData, setFormData] = useState({
+    name: '',
+    subjectId: '',
+    teacherId: '',
+    semester: 'Học kỳ 1',
+    schoolYear: ''
+  });
+  const [errors, setErrors] = useState<Record<string, string>>({});
+
+  // Cập nhật schoolYear khi defaultYear có giá trị và đang ở chế độ thêm mới
+  React.useEffect(() => {
+    if (defaultYear && !editingId && !formData.schoolYear) {
+      setFormData(prev => ({ ...prev, schoolYear: defaultYear }));
+    }
+  }, [defaultYear, editingId]);
+
+  const [yearFilter, setYearFilter] = useState('');
 
   const handleAddSection = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -139,7 +148,8 @@ export const Sections = () => {
   };
 
   const filteredSections = sections?.filter(s => 
-    s.name.toLowerCase().includes(searchTerm.toLowerCase())
+    s.name.toLowerCase().includes(searchTerm.toLowerCase()) &&
+    (!yearFilter || s.schoolYear === yearFilter)
   );
 
   return (
@@ -168,14 +178,25 @@ export const Sections = () => {
         </Button>
       </PageHeader>
 
-      <div className="relative group">
-        <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-foreground/30 group-focus-within:text-primary transition-colors" />
-        <Input 
-          className="pl-12 h-14 bg-background-light/50 backdrop-blur-xl border-foreground/10 focus:border-primary/50 shadow-inner" 
-          placeholder="Tìm kiếm theo tên lớp học phần hoặc mã môn..." 
-          value={searchTerm} 
-          onChange={e => updateFilter('sections', { searchTerm: e.target.value })} 
-        />
+      <div className="flex flex-col md:flex-row gap-4 items-end">
+        <div className="relative group flex-1">
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-foreground/30 group-focus-within:text-primary transition-colors" />
+          <Input 
+            className="pl-12 h-14 bg-background-light/50 backdrop-blur-xl border-foreground/10 focus:border-primary/50 shadow-inner" 
+            placeholder="Tìm kiếm theo tên lớp học phần hoặc mã môn..." 
+            value={searchTerm} 
+            onChange={e => updateFilter('sections', { searchTerm: e.target.value })} 
+          />
+        </div>
+        <div className="w-full md:w-60">
+          <Input 
+            label="Lọc theo năm học"
+            type="select"
+            options={[{ value: '', label: 'Tất cả năm học' }, ...(academicYears?.map(y => ({ value: y.name, label: y.name })) || [])]}
+            value={yearFilter}
+            onChange={e => setYearFilter(e.target.value)}
+          />
+        </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -288,7 +309,16 @@ export const Sections = () => {
           />
           <div className="grid grid-cols-2 gap-4">
             <Input label="Học kỳ" value={formData.semester} onChange={e => setFormData({...formData, semester: e.target.value})} />
-            <Input label="Năm học" value={formData.schoolYear} onChange={e => setFormData({...formData, schoolYear: e.target.value})} />
+            <Input 
+              label="Năm học" 
+              type="select"
+              options={[
+                { value: '', label: 'Chọn năm học...' },
+                ...(academicYears?.map(y => ({ value: y.name, label: y.name })) || [])
+              ]}
+              value={formData.schoolYear} 
+              onChange={e => setFormData({...formData, schoolYear: e.target.value})} 
+            />
           </div>
           <div className="flex gap-4 pt-6">
             <Button type="button" variant="secondary" className="flex-1 h-12 rounded-2xl" onClick={() => setIsModalOpen(false)}>Hủy</Button>

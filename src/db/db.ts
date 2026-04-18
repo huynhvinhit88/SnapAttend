@@ -2,7 +2,7 @@ import Dexie, { type Table } from 'dexie';
 import type { 
   Class, Student, Teacher, Subject, 
   SubjectSection, Enrollment, Session, 
-  AttendanceRecord, AppSettings 
+  AttendanceRecord, AppSettings, AcademicYear
 } from '../types/database';
 import { cryptoService } from '../services/crypto.service';
 
@@ -16,11 +16,12 @@ export class SnapAttendDB extends Dexie {
   sessions!: Table<Session>;
   attendance!: Table<AttendanceRecord>;
   settings!: Table<AppSettings>;
+  academicYears!: Table<AcademicYear>;
 
   constructor() {
     super('SnapAttendDB');
     
-    this.version(1).stores({
+    this.version(2).stores({
       classes: '++id, name, grade',
       teachers: '++id, teacherCode',
       students: '++id, studentCode, classId',
@@ -29,7 +30,8 @@ export class SnapAttendDB extends Dexie {
       enrollments: '++id, sectionId, studentId',
       sessions: '++id, sectionId, date',
       attendance: '++id, sessionId, studentId',
-      settings: 'id'
+      settings: 'id',
+      academicYears: '++id, name, isDefault'
     });
 
     // Cấu hình Middleware để tự động mã hóa/giải mã thông tin nhạy cảm
@@ -43,6 +45,7 @@ export class SnapAttendDB extends Dexie {
       obj.studentCode = obj.studentCode ? cryptoService.encrypt(obj.studentCode) : '';
       if (obj.email) obj.email = cryptoService.encrypt(obj.email);
       if (obj.avatar) obj.avatar = cryptoService.encrypt(obj.avatar);
+      if (obj.academicYear) obj.academicYear = cryptoService.encrypt(obj.academicYear);
     });
 
     this.students.hook('updating', (mods: any) => {
@@ -51,6 +54,7 @@ export class SnapAttendDB extends Dexie {
       if (mods.studentCode) encryptedUpdates.studentCode = cryptoService.encrypt(mods.studentCode);
       if (mods.email) encryptedUpdates.email = cryptoService.encrypt(mods.email);
       if (mods.avatar) encryptedUpdates.avatar = cryptoService.encrypt(mods.avatar);
+      if (mods.academicYear) encryptedUpdates.academicYear = cryptoService.encrypt(mods.academicYear);
       return encryptedUpdates;
     });
 
@@ -61,7 +65,8 @@ export class SnapAttendDB extends Dexie {
         name: obj.name ? cryptoService.decrypt(obj.name) || obj.name : obj.name,
         studentCode: obj.studentCode ? cryptoService.decrypt(obj.studentCode) || obj.studentCode : obj.studentCode,
         email: obj.email ? cryptoService.decrypt(obj.email) : undefined,
-        avatar: obj.avatar ? cryptoService.decrypt(obj.avatar) : undefined
+        avatar: obj.avatar ? cryptoService.decrypt(obj.avatar) : undefined,
+        academicYear: obj.academicYear ? cryptoService.decrypt(obj.academicYear) : undefined
       };
     });
 

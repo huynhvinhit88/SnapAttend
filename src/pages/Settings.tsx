@@ -1,46 +1,56 @@
-import React, { useState, useEffect } from 'react';
-import { ShieldCheck, Download, Upload, Lock, RefreshCcw, Settings as SettingsIcon, CheckCircle, Database } from 'lucide-react';
+import { useState } from 'react';
+import { useLiveQuery } from 'dexie-react-hooks';
+import { 
+  ShieldCheck, Lock, Settings as SettingsIcon, Star,
+  Plus, Calendar, Trash2
+} from 'lucide-react';
 import { PageHeader } from '../components/ui/PageHeader';
 import { Button } from '../components/ui/Button';
 import { Card } from '../components/ui/Card';
 import { Input } from '../components/ui/Input';
+import { db } from '../db/db';
 import { authService } from '../services/auth.service';
-import { backupService } from '../services/backup.service';
-import { googleDriveService } from '../services/googleDrive.service';
 
 export const Settings = () => {
   const [pinData, setPinData] = useState({ old: '', new: '' });
-  const [backupPassword, setBackupPassword] = useState('');
-  const [googleConfig, setGoogleConfig] = useState({ clientId: '', apiKey: '' });
-  const [folderId, setFolderId] = useState<string | null>(null);
+  const [newYearName, setNewYearName] = useState('');
 
-  useEffect(() => {
-    loadGoogleDriveInfo();
-  }, []);
+  const academicYears = useLiveQuery(() => db.academicYears.toArray());
 
-  const loadGoogleDriveInfo = async () => {
-    const config = await googleDriveService.getConfig();
-    const fid = await googleDriveService.getFolderId();
-    setGoogleConfig(config);
-    setFolderId(fid);
-  };
-
-  const handleSaveGoogleConfig = async () => {
-    await googleDriveService.saveConfig(googleConfig);
-    alert('Đã lưu cấu hình Google Drive!');
-  };
-
-  const handlePickFolder = async () => {
+  const handleAddYear = async () => {
+    if (!newYearName.trim()) return;
     try {
-      const fid = await googleDriveService.pickFolder();
-      setFolderId(fid);
-      alert('Đã kết nối thư mục Google Drive thành công!');
+      const existing = await db.academicYears.where('name').equalsIgnoreCase(newYearName.trim()).first();
+      if (existing) return alert('Năm học này đã tồn tại!');
+
+      const isFirst = (academicYears?.length || 0) === 0;
+      await db.academicYears.add({
+        name: newYearName.trim(),
+        isDefault: isFirst,
+        createdAt: Date.now()
+      });
+      setNewYearName('');
     } catch (err) {
       console.error(err);
-      alert('Lỗi khi chọn thư mục: ' + (typeof err === 'string' ? err : 'Vui lòng kiểm tra Client ID và API Key'));
     }
   };
-  
+
+  const handleDeleteYear = async (id: number) => {
+    const year = academicYears?.find(y => y.id === id);
+    if (!year) return;
+
+    if (confirm(`Bạn có chắc chắn muốn xóa năm học "${year.name}"?`)) {
+      await db.academicYears.delete(id);
+    }
+  };
+
+  const handleSetDefaultYear = async (id: number) => {
+    await db.transaction('rw', db.academicYears, async () => {
+      await db.academicYears.toCollection().modify({ isDefault: false });
+      await db.academicYears.update(id, { isDefault: true });
+    });
+  };
+
   const handleUpdatePin = () => {
     if (authService.verifyPin(pinData.old)) {
       authService.setPin(pinData.new);
@@ -51,35 +61,11 @@ export const Settings = () => {
     }
   };
 
-  const handleExport = async () => {
-    const content = await backupService.exportData(backupPassword);
-    backupService.downloadBackup(content);
-    alert('Đã chuẩn bị file sao lưu thành công!');
-  };
-
-  const handleImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    const reader = new FileReader();
-    reader.onload = async (event) => {
-      const content = event.target?.result as string;
-      const success = await backupService.importData(content, backupPassword);
-      if (success) {
-        alert('Khôi phục dữ liệu thành công! Ứng dụng sẽ tải lại.');
-        window.location.reload();
-      } else {
-        alert('Khôi phục thất bại. Vui lòng kiểm tra mật mã file (nếu có).');
-      }
-    };
-    reader.readAsText(file);
-  };
-
   return (
     <div className="space-y-8">
       <PageHeader
-        title="Cài đặt hệ thống"
-        description="Quản lý bảo mật, dữ liệu và thiết lập ứng dụng."
+        title="Cài đặt"
+        description="Quản lý bảo mật và thiết lập ứng dụng."
         icon={<SettingsIcon className="w-8 h-8" />}
         breadcrumbs={[
           { label: 'Trang chủ' },
@@ -110,97 +96,52 @@ export const Settings = () => {
           </div>
         </Card>
 
-        {/* Backup Section */}
+        {/* Academic Year Management */}
         <Card className="h-full">
           <div className="flex items-center gap-3 mb-6">
-            <RefreshCcw className="text-accent w-6 h-6" />
-            <h2 className="text-xl font-bold text-foreground">Sao lưu & Khôi phục</h2>
+            <Calendar className="text-primary w-6 h-6" />
+            <h2 className="text-xl font-bold text-foreground">Quản lý Năm học</h2>
           </div>
           
-          <div className="space-y-4">
-            <p className="text-sm text-foreground/40 mb-4">
-              Dữ liệu của bạn được lưu trữ hoàn toàn trên thiết bị này. Hãy thường xuyên sao lưu để tránh mất dữ liệu.
-            </p>
-            
-            <Input 
-              label="Mật mã file sao lưu (Tùy chọn)" type="password" 
-              placeholder="Để trống nếu không cần mã hóa file"
-              value={backupPassword} onChange={e => setBackupPassword(e.target.value)}
-            />
-
-            <div className="grid grid-cols-2 gap-3 pt-2">
-              <Button variant="secondary" onClick={handleExport}>
-                <Download className="w-4 h-4" />
-                Sao lưu ngay
+          <div className="space-y-6">
+            <div className="flex gap-2">
+              <Input 
+                label="Thêm năm học mới" 
+                placeholder="VD: 2024-2025"
+                value={newYearName}
+                onChange={e => setNewYearName(e.target.value)}
+                className="flex-1"
+              />
+              <Button className="mt-[26px] h-11 w-11 p-0 flex-shrink-0" onClick={handleAddYear}>
+                <Plus className="w-5 h-5" />
               </Button>
-              <div className="relative">
-                <Button variant="secondary" className="w-full" onClick={() => document.getElementById('import-file')?.click()}>
-                  <Upload className="w-4 h-4" />
-                  Khôi phục
-                </Button>
-                <input id="import-file" type="file" className="hidden" accept=".json" onChange={handleImport} />
-              </div>
-            </div>
-          </div>
-        </Card>
-
-        {/* Google Drive Section */}
-        <Card className="md:col-span-2">
-          <div className="flex items-center justify-between mb-6">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-blue-500/10 rounded-lg">
-                <svg className="w-6 h-6 text-blue-500" viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M7.71 3h8.58l5.71 10-4.29 7.5H6.29L2 13l5.71-10zM15 18l3.43-6H5.57l3.43 6h6z" />
-                </svg>
-              </div>
-              <div>
-                <h2 className="text-xl font-bold text-foreground">Google Drive Sync</h2>
-                <p className="text-xs text-foreground/40">Tự động sao lưu và đồng bộ lên đám mây</p>
-              </div>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <div className="lg:col-span-2 space-y-4">
-              <Input 
-                label="Google Client ID"
-                value={googleConfig.clientId}
-                onChange={e => setGoogleConfig({...googleConfig, clientId: e.target.value})}
-                placeholder="Nhập Client ID từ Google Cloud Console"
-              />
-              <Input 
-                label="API Key"
-                value={googleConfig.apiKey}
-                onChange={e => setGoogleConfig({...googleConfig, apiKey: e.target.value})}
-                placeholder="Nhập API Key để sử dụng Folder Picker"
-              />
-              <div className="flex gap-3">
-                <Button className="flex-1" onClick={handleSaveGoogleConfig}>
-                  Lưu cấu hình
-                </Button>
-                <Button variant="secondary" className="flex-1" onClick={handlePickFolder}>
-                  {folderId ? 'Thay đổi thư mục lưu' : 'Chọn thư mục lưu'}
-                </Button>
-              </div>
             </div>
 
-            <div className="p-4 bg-foreground/5 rounded-2xl border border-foreground/10 flex flex-col justify-center items-center text-center space-y-2">
-              {folderId ? (
-                <>
-                  <div className="w-12 h-12 bg-green-500/20 rounded-full flex items-center justify-center">
-                    <CheckCircle className="w-6 h-6 text-green-500" />
+            <div className="space-y-2 max-h-[160px] overflow-auto pr-2 custom-scrollbar border-t border-foreground/5 pt-4">
+              {academicYears?.map(y => (
+                <div key={y.id} className="flex items-center justify-between p-3 rounded-xl bg-foreground/5 border border-foreground/5 hover:border-foreground/10 transition-all">
+                  <div className="flex items-center gap-3">
+                    <span className="font-bold text-foreground">{y.name}</span>
+                    {y.isDefault && (
+                      <span className="flex items-center gap-1 px-2 py-0.5 bg-yellow-500/10 text-yellow-500 text-[10px] font-black uppercase tracking-widest rounded-full">
+                        <Star className="w-3 h-3 fill-current" /> Mặc định
+                      </span>
+                    )}
                   </div>
-                  <p className="text-sm font-bold text-foreground">Đã kết nối</p>
-                  <p className="text-[10px] text-foreground/40 break-all px-2">ID: {folderId}</p>
-                </>
-              ) : (
-                <>
-                  <div className="w-12 h-12 bg-foreground/5 rounded-full flex items-center justify-center">
-                    <Database className="w-6 h-6 text-foreground/20" />
+                  <div className="flex items-center gap-2">
+                    {!y.isDefault && (
+                      <Button variant="ghost" className="p-1 h-7 text-[10px] uppercase font-black tracking-widest hover:bg-primary/10 text-primary" onClick={() => handleSetDefaultYear(y.id!)}>
+                        Đặt mặc định
+                      </Button>
+                    )}
+                    <Button variant="ghost" className="p-1 h-7 text-red-500 hover:bg-red-500/10 rounded-lg" onClick={() => handleDeleteYear(y.id!)}>
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
                   </div>
-                  <p className="text-sm font-bold text-foreground/40">Chưa kết nối</p>
-                  <p className="text-[10px] text-foreground/20">Hãy chọn thư mục để kích hoạt</p>
-                </>
+                </div>
+              ))}
+              {academicYears?.length === 0 && (
+                <p className="text-center py-4 text-foreground/30 text-sm italic">Chưa có dữ liệu năm học.</p>
               )}
             </div>
           </div>
@@ -214,9 +155,9 @@ export const Settings = () => {
           <div>
             <h4 className="font-bold text-foreground mb-1">Bảo mật Hybrid</h4>
             <p className="text-sm text-foreground/60">
-              Dữ liệu trên máy được bảo vệ bằng Master Key riêng biệt cho từng thiết bị. 
-              Mã PIN đóng vai trò là cổng truy cập. File sao lưu có thể được đặt mật khẩu riêng 
-              để chuyển đổi dữ liệu an toàn giữa các thiết bị.
+              Dữ liệu của bạn được bảo vệ bằng lớp mã hóa an toàn ngay tại thiết bị này. 
+              Mã PIN đóng vai trò là lớp bảo vệ truy cập nhanh, trong khi tất cả các dữ liệu 
+              nhạy cảm (tên, mã số, hình ảnh...) đều được mã hóa bằng công nghệ cấp độ cao.
             </p>
           </div>
         </div>

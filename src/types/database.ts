@@ -1,5 +1,12 @@
 export type AttendanceStatus = 'present' | 'late' | 'absent';
 
+export interface AcademicYear {
+  id?: number;
+  name: string;
+  isDefault: boolean;
+  createdAt: number;
+}
+
 export interface Class {
   id?: number;
   name: string;
@@ -24,6 +31,7 @@ export interface Student {
   classId: number;
   email?: string;
   avatar?: string; // Base64 compressed
+  academicYear?: string;
   createdAt: number;
 }
 

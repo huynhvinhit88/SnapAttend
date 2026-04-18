@@ -26,12 +26,15 @@ export const Classes = () => {
 
   const classes = useLiveQuery(() => db.classes.toArray());
   const totalStudents = useLiveQuery(() => db.students.count());
+  const academicYears = useLiveQuery(() => db.academicYears.toArray());
+  const defaultYear = useMemo(() => academicYears?.find(y => y.isDefault)?.name || '', [academicYears]);
 
   // Lọc danh sách lớp dựa trên từ khóa tìm kiếm
   const filteredClasses = useMemo(() => {
     if (!classes) return [];
     return classes.filter(c => 
       c.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      c.academicYear.toLowerCase().includes(searchTerm.toLowerCase()) ||
       (c.major && c.major.toLowerCase().includes(searchTerm.toLowerCase()))
     );
   }, [classes, searchTerm]);
@@ -117,7 +120,7 @@ export const Classes = () => {
       >
         <Button onClick={() => {
           setEditingId(null);
-          setFormData({ name: '', grade: '', academicYear: '', major: '' });
+          setFormData({ name: '', grade: '', academicYear: defaultYear, major: '' });
           setErrors({});
           setIsModalOpen(true);
         }}>
@@ -130,7 +133,7 @@ export const Classes = () => {
         <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-foreground/30 transition-colors group-focus-within:text-primary" />
         <Input 
           className="pl-12 h-14 text-lg bg-background-light/50 backdrop-blur-xl border-foreground/10 focus:border-primary/50 focus:ring-4 focus:ring-primary/5 shadow-inner" 
-          placeholder="Tìm kiếm theo tên lớp hoặc chuyên ngành..." 
+          placeholder="Tìm kiếm theo tên lớp, niên khóa hoặc chuyên ngành..." 
           value={searchTerm}
           onChange={(e) => updateFilter('classes', { searchTerm: e.target.value })}
         />
@@ -240,8 +243,7 @@ export const Classes = () => {
             onChange={(e) => setFormData({...formData, major: e.target.value})}
           />
           <Input 
-            label="Niên khóa" 
-            placeholder="VD: 2024 - 2027"
+            label="Niên khóa (VD: 2024-2025, K15...)" 
             value={formData.academicYear}
             error={errors.academicYear}
             onChange={(e) => {

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { 
   Plus, Calendar, Clock, Trash2, Search, 
@@ -42,6 +42,23 @@ export const Sessions = ({ onStartAttendance }: SessionsProps) => {
 
   const sessions = useLiveQuery(() => db.sessions.toArray());
   const sections = useLiveQuery(() => db.sections.toArray());
+  const academicYears = useLiveQuery(() => db.academicYears.toArray());
+
+  const [sessionYearFilter, setSessionYearFilter] = useState('');
+  const [recurringYearFilter, setRecurringYearFilter] = useState('');
+
+  const defaultYear = useMemo(() => 
+    academicYears?.find(y => y.isDefault)?.name || '', 
+    [academicYears]
+  );
+
+  // Tự động chọn năm mặc định khi mở modal hoặc khi dữ liệu năm học tải xong
+  useEffect(() => {
+    if (defaultYear) {
+      setSessionYearFilter(defaultYear);
+      setRecurringYearFilter(defaultYear);
+    }
+  }, [defaultYear]);
 
   const handleCreateSession = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -254,8 +271,17 @@ export const Sessions = ({ onStartAttendance }: SessionsProps) => {
       <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title="Thêm Ca Học Lẻ">
         <form noValidate onSubmit={handleCreateSession} className="space-y-6 pt-4">
           <Input 
+            label="Lọc theo năm học" type="select"
+            options={[{ value: '', label: 'Tất cả năm học' }, ...(academicYears?.map(y => ({ value: y.name, label: y.name })) || [])]}
+            value={sessionYearFilter}
+            onChange={e => setSessionYearFilter(e.target.value)}
+          />
+          <Input 
             label="Lớp học phần" type="select"
-            options={[{ value: '', label: 'Chọn lớp HP...' }, ...(sections?.map(s => ({ value: s.id!.toString(), label: s.name })) || [])]}
+            options={[
+              { value: '', label: 'Chọn lớp HP...' }, 
+              ...(sections?.filter(s => !sessionYearFilter || s.schoolYear === sessionYearFilter).map(s => ({ value: s.id!.toString(), label: s.name })) || [])
+            ]}
             value={formData.sectionId}
             onChange={e => setFormData({...formData, sectionId: e.target.value})}
           />
@@ -280,8 +306,17 @@ export const Sessions = ({ onStartAttendance }: SessionsProps) => {
             </p>
           </div>
           <Input 
+            label="Lọc theo năm học" type="select"
+            options={[{ value: '', label: 'Tất cả năm học' }, ...(academicYears?.map(y => ({ value: y.name, label: y.name })) || [])]}
+            value={recurringYearFilter}
+            onChange={e => setRecurringYearFilter(e.target.value)}
+          />
+          <Input 
             label="Lớp học phần" type="select"
-            options={[{ value: '', label: 'Chọn lớp HP...' }, ...(sections?.map(s => ({ value: s.id!.toString(), label: s.name })) || [])]}
+            options={[
+              { value: '', label: 'Chọn lớp HP...' }, 
+              ...(sections?.filter(s => !recurringYearFilter || s.schoolYear === recurringYearFilter).map(s => ({ value: s.id!.toString(), label: s.name })) || [])
+            ]}
             value={recurringData.sectionId}
             onChange={e => setRecurringData({...recurringData, sectionId: e.target.value})}
           />

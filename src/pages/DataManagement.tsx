@@ -10,6 +10,7 @@ import {
 import { db } from '../db/db';
 import { Button } from '../components/ui/Button';
 import { Card } from '../components/ui/Card';
+import { Input } from '../components/ui/Input';
 import { motion, AnimatePresence } from 'framer-motion';
 import { clsx } from 'clsx';
 import { PageHeader } from '../components/ui/PageHeader';
@@ -54,6 +55,66 @@ export const DataManagement = () => {
   const dbTeachers = useLiveQuery(() => db.teachers.toArray());
   const dbSubjects = useLiveQuery(() => db.subjects.toArray());
   const dbSections = useLiveQuery(() => db.sections.toArray());
+  const academicYears = useLiveQuery(() => db.academicYears.toArray());
+  const [selectedYearToDelete, setSelectedYearToDelete] = useState('');
+
+  const handleDeleteYear = async () => {
+    if (!selectedYearToDelete) return;
+    
+    // Đếm dữ liệu sẽ xóa
+    const sectionsToDelete = await db.sections.where('schoolYear').equals(selectedYearToDelete).toArray();
+    const sectionIds = sectionsToDelete.map(s => s.id!);
+    
+    const sessionsToDelete = await db.sessions.where('sectionId').anyOf(sectionIds).toArray();
+    const sessionIds = sessionsToDelete.map(s => s.id!);
+    
+    const enrollmentsCount = await db.enrollments.where('sectionId').anyOf(sectionIds).count();
+    const attendanceCount = await db.attendance.where('sessionId').anyOf(sessionIds).count();
+    const classesToDelete = await db.classes.where('academicYear').equals(selectedYearToDelete).toArray();
+    const classIds = classesToDelete.map(c => c.id!);
+    const studentsCount = await db.students.where('classId').anyOf(classIds).count();
+
+    const confirmMsg = `Bạn có chắc chắn muốn xóa TOÀN BỘ dữ liệu của năm học ${selectedYearToDelete}?\n\n` +
+      `Dữ liệu sẽ mất:\n` +
+      `- ${classesToDelete.length} Lớp hành chính\n` +
+      `- ${studentsCount} Học sinh thuộc lớp hành chính\n` +
+      `- ${sectionsToDelete.length} Lớp học phần\n` +
+      `- ${enrollmentsCount} Ghi danh lớp phần\n` +
+      `- ${sessionsToDelete.length} Ca dạy\n` +
+      `- ${attendanceCount} Bản ghi điểm danh\n\n` +
+      `Thao tác này KHÔNG THỂ hoàn tác!`;
+
+    if (confirm(confirmMsg)) {
+      setIsProcessing(true);
+      try {
+        await db.transaction('rw', [
+          db.classes, db.students, db.sections, 
+          db.enrollments, db.sessions, db.attendance
+        ], async () => {
+          // 1. Xóa Attendance
+          await db.attendance.where('sessionId').anyOf(sessionIds).delete();
+          // 2. Xóa Sessions
+          await db.sessions.where('sectionId').anyOf(sectionIds).delete();
+          // 3. Xóa Enrollments
+          await db.enrollments.where('sectionId').anyOf(sectionIds).delete();
+          // 4. Xóa Sections
+          await db.sections.where('schoolYear').equals(selectedYearToDelete).delete();
+          // 5. Xóa Students
+          await db.students.where('classId').anyOf(classIds).delete();
+          // 6. Xóa Classes
+          await db.classes.where('academicYear').equals(selectedYearToDelete).delete();
+        });
+        
+        alert(`Đã dọn dẹp thành công dữ liệu năm học ${selectedYearToDelete}!`);
+        setSelectedYearToDelete('');
+      } catch (error) {
+        console.error(error);
+        alert('Lỗi hệ thống: Không thể xóa dữ liệu.');
+      } finally {
+        setIsProcessing(false);
+      }
+    }
+  };
 
   // Cloud Sync Logic
   const fetchCloudFiles = async () => {
@@ -854,45 +915,77 @@ export const DataManagement = () => {
       </AnimatePresence>
 
       <div className="mt-12 pt-12 border-t border-foreground/5">
-        <div className="max-w-xl">
+        <div className="max-w-5xl">
           <h3 className="text-red-500 font-black text-xs uppercase tracking-[0.2em] mb-4 flex items-center gap-2">
             <AlertTriangle className="w-4 h-4" /> Vùng nguy hiểm
           </h3>
-          <Card className="p-6 border-red-500/20 bg-red-500/[0.02] flex flex-col md:flex-row items-center justify-between gap-6">
-            <div className="space-y-1">
-              <p className="font-bold text-foreground">Xóa toàn bộ dữ liệu</p>
-              <p className="text-xs text-foreground/40 leading-relaxed">
-                Thao tác này sẽ dọn dẹp sạch sẽ mọi thông tin trong ứng dụng. Hãy cân nhắc kỹ trước khi thực hiện.
-              </p>
-            </div>
 
-            {!isConfirmingDelete ? (
-              <Button 
-                variant="ghost" 
-                className="text-red-500 hover:bg-red-500/10 text-xs font-black uppercase tracking-widest whitespace-nowrap"
-                onClick={() => setIsConfirmingDelete(true)}
-              >
-                Xóa ngay
-              </Button>
-            ) : (
-              <div className="flex gap-2 animate-in fade-in slide-in-from-right-4 duration-300">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <Card className="p-6 border-red-500/20 bg-red-500/[0.02] flex flex-col justify-between gap-6">
+              <div className="space-y-1">
+                <p className="font-bold text-foreground">Xóa dữ liệu theo năm học</p>
+                <p className="text-xs text-foreground/40 leading-relaxed">
+                  Gỡ bỏ toàn bộ lớp học, học sinh, lớp HP và điểm danh thuộc một năm học cụ thể.
+                </p>
+              </div>
+
+              <div className="flex gap-2 items-end">
+                <div className="flex-1">
+                  <Input 
+                    label="Chọn năm học muốn xóa"
+                    type="select"
+                    options={[{ value: '', label: 'Chọn năm học...' }, ...(academicYears?.map(y => ({ value: y.name, label: y.name })) || [])]}
+                    value={selectedYearToDelete}
+                    onChange={e => setSelectedYearToDelete(e.target.value)}
+                  />
+                </div>
                 <Button 
-                  variant="secondary" 
-                  className="text-[10px] font-black uppercase tracking-widest px-4 h-10"
-                  onClick={() => setIsConfirmingDelete(false)}
+                  variant="ghost" 
+                  disabled={!selectedYearToDelete || isProcessing}
+                  className="text-red-500 hover:bg-red-500/10 text-[10px] font-black uppercase tracking-widest h-11 mb-0.5"
+                  onClick={handleDeleteYear}
                 >
-                  Hủy
-                </Button>
-                <Button 
-                  className="bg-red-500 hover:bg-red-600 text-foreground text-[10px] font-black uppercase tracking-widest px-4 h-10 shadow-lg shadow-red-500/20"
-                  onClick={handleDeleteAll}
-                  disabled={isProcessing}
-                >
-                  Xác nhận xóa
+                  Xóa năm học
                 </Button>
               </div>
-            )}
-          </Card>
+            </Card>
+
+            <Card className="p-6 border-red-500/20 bg-red-500/[0.02] flex flex-col md:flex-row items-center justify-between gap-6">
+              <div className="space-y-1">
+                <p className="font-bold text-foreground">Xóa toàn bộ dữ liệu</p>
+                <p className="text-xs text-foreground/40 leading-relaxed">
+                  Thao tác này sẽ dọn dẹp sạch sẽ mọi thông tin trong ứng dụng. Hãy cân nhắc kỹ trước khi thực hiện.
+                </p>
+              </div>
+
+              {!isConfirmingDelete ? (
+                <Button 
+                  variant="ghost" 
+                  className="text-red-500 hover:bg-red-500/10 text-xs font-black uppercase tracking-widest whitespace-nowrap"
+                  onClick={() => setIsConfirmingDelete(true)}
+                >
+                  Xóa ngay
+                </Button>
+              ) : (
+                <div className="flex gap-2 animate-in fade-in slide-in-from-right-4 duration-300">
+                  <Button 
+                    variant="secondary" 
+                    className="text-[10px] font-black uppercase tracking-widest px-4 h-10"
+                    onClick={() => setIsConfirmingDelete(false)}
+                  >
+                    Hủy
+                  </Button>
+                  <Button 
+                    className="bg-red-500 hover:bg-red-600 text-foreground text-[10px] font-black uppercase tracking-widest px-4 h-10 shadow-lg shadow-red-500/20"
+                    onClick={handleDeleteAll}
+                    disabled={isProcessing}
+                  >
+                    Xác nhận xóa
+                  </Button>
+                </div>
+              )}
+            </Card>
+          </div>
         </div>
       </div>
     </div>

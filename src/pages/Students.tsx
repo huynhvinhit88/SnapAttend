@@ -1,4 +1,4 @@
-import React, { useState, useRef, useMemo } from 'react';
+import React, { useState, useRef, useMemo, useEffect } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { Plus, Trash2, Search, Camera, Upload, Pencil, Users, School } from 'lucide-react';
 import { db } from '../db/db';
@@ -15,7 +15,7 @@ import { PageHeader } from '../components/ui/PageHeader';
 export const Students = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const { filters, updateFilter } = useFilter();
-  const { searchTerm, selectedClassId } = filters.students;
+  const { searchTerm } = filters.students;
   const [editingId, setEditingId] = useState<number | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   
@@ -23,7 +23,8 @@ export const Students = () => {
     name: '',
     studentCode: '',
     classId: '',
-    avatar: '' as string | undefined
+    avatar: '' as string | undefined,
+    academicYear: ''
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -32,15 +33,31 @@ export const Students = () => {
   const students = useLiveQuery(() => db.students.toArray());
   const classesCount = useLiveQuery(() => db.classes.count());
 
+  // Tự động điền niên khóa của lớp khi lớp được chọn
+  useEffect(() => {
+    if (formData.classId && !editingId) {
+      const selectedClass = classes?.find(c => c.id === parseInt(formData.classId));
+      if (selectedClass) {
+        setFormData(prev => ({ ...prev, academicYear: selectedClass.academicYear }));
+      }
+    }
+  }, [formData.classId, classes, editingId]);
+
   const filteredStudents = useMemo(() => {
-    if (!students) return [];
+    if (!students || !classes) return [];
     return students.filter(s => {
-      const matchesSearch = s.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                          s.studentCode.toLowerCase().includes(searchTerm.toLowerCase());
-      const matchesClass = selectedClassId === 'all' || s.classId === parseInt(selectedClassId);
-      return matchesSearch && matchesClass;
+      const studentClass = classes.find(c => c.id === s.classId);
+      const searchStr = searchTerm.toLowerCase();
+      
+      const matchesSearch = 
+        s.name.toLowerCase().includes(searchStr) ||
+        s.studentCode.toLowerCase().includes(searchStr) ||
+        (studentClass?.name.toLowerCase().includes(searchStr)) ||
+        (s.academicYear?.toLowerCase().includes(searchStr));
+        
+      return matchesSearch;
     });
-  }, [students, searchTerm, selectedClassId]);
+  }, [students, classes, searchTerm]);
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -69,6 +86,7 @@ export const Students = () => {
         studentCode: formData.studentCode.trim(),
         classId: parseInt(formData.classId),
         avatar: formData.avatar || undefined,
+        academicYear: formData.academicYear.trim() || undefined,
       };
 
       if (editingId) {
@@ -80,7 +98,7 @@ export const Students = () => {
         });
       }
 
-      setFormData({ name: '', studentCode: '', classId: '', avatar: '' });
+      setFormData({ name: '', studentCode: '', classId: '', avatar: '', academicYear: '' });
       setErrors({});
       setEditingId(null);
       setIsModalOpen(false);
@@ -95,7 +113,8 @@ export const Students = () => {
       name: student.name,
       studentCode: student.studentCode,
       classId: student.classId.toString(),
-      avatar: student.avatar || ''
+      avatar: student.avatar || '',
+      academicYear: student.academicYear || ''
     });
     setEditingId(student.id);
     setIsModalOpen(true);
@@ -132,7 +151,7 @@ export const Students = () => {
       >
         <Button onClick={() => {
           setEditingId(null);
-          setFormData({ name: '', studentCode: '', classId: '', avatar: '' });
+          setFormData({ name: '', studentCode: '', classId: '', avatar: '', academicYear: '' });
           setIsModalOpen(true);
         }}>
           <Plus className="w-5 h-5" />
@@ -147,7 +166,7 @@ export const Students = () => {
         <div className="flex-1 w-full relative z-10">
           <Input 
             label="Tìm kiếm học sinh"
-            placeholder="Tìm theo tên, mã học sinh..." 
+            placeholder="Tìm theo tên, mã HS, tên lớp hoặc niên khóa..." 
             icon={<Search className="w-4 h-4" />}
             className="h-12"
             value={searchTerm}
@@ -155,19 +174,6 @@ export const Students = () => {
           />
         </div>
         
-        <div className="w-full md:w-64 relative z-10">
-          <Input 
-            label="Lớp hành chính"
-            type="select"
-            className="h-12"
-            options={[
-              { value: 'all', label: 'Tất cả các lớp' },
-              ...(classes?.map(c => ({ value: c.id!.toString(), label: c.name })) || [])
-            ]}
-            value={selectedClassId}
-            onChange={(e) => updateFilter('students', { selectedClassId: e.target.value })}
-          />
-        </div>
       </Card>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -201,9 +207,16 @@ export const Students = () => {
                   <div>
                     <h3 className="font-bold text-foreground leading-tight">{item.name}</h3>
                     <p className="text-foreground/40 text-sm mt-1">MSHS: {item.studentCode}</p>
-                    <span className="inline-block mt-2 px-2 py-0.5 bg-foreground/5 rounded text-[10px] text-foreground/60 font-bold uppercase tracking-wider">
-                      {studentClass?.name || 'K/N'}
-                    </span>
+                    <div className="flex gap-2 mt-2">
+                      <span className="px-2 py-0.5 bg-foreground/5 rounded text-[10px] text-foreground/60 font-bold uppercase tracking-wider">
+                        {studentClass?.name || 'K/N'}
+                      </span>
+                      {item.academicYear && (
+                        <span className="px-2 py-0.5 bg-primary/5 rounded text-[10px] text-primary font-bold uppercase tracking-wider">
+                          {item.academicYear}
+                        </span>
+                      )}
+                    </div>
                   </div>
                 </div>
               </Card>
@@ -266,6 +279,12 @@ export const Students = () => {
               setFormData({...formData, classId: e.target.value});
               if (errors.classId) setErrors({...errors, classId: ''});
             }}
+          />
+          <Input 
+            label="Niên khóa (Tự do)" 
+            placeholder="VD: K15, 2021-2025..."
+            value={formData.academicYear}
+            onChange={e => setFormData({...formData, academicYear: e.target.value})}
           />
           
           <div className="flex gap-3 pt-4">

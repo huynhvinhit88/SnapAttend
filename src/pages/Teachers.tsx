@@ -128,7 +128,7 @@ export const Teachers = () => {
         <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-foreground/30" />
         <Input 
           className="pl-12" 
-          placeholder="Tìm kiếm theo tên hoặc mã giáo viên..." 
+          placeholder="Tìm kiếm theo tên, mã giáo viên hoặc bộ môn..." 
           value={searchTerm}
           onChange={(e) => updateFilter('teachers', { searchTerm: e.target.value })}
         />

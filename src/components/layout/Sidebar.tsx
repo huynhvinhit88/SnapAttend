@@ -89,5 +89,6 @@ export const Sidebar = ({ activeId, onNavigate, onLock, isOpen, onClose }: Sideb
         </div>
       </div>
     </div>
+  </>
   );
 };

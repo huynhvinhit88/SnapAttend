@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Sidebar } from './Sidebar';
 import { Menu } from 'lucide-react';
+import { QuickAttendanceFAB } from '../ui/QuickAttendanceFAB';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -55,6 +56,8 @@ export const Layout = ({ children, activeId, onNavigate, onLock }: LayoutProps) 
           {children}
         </div>
       </main>
+
+      <QuickAttendanceFAB onNavigate={onNavigate} activeId={activeId} />
     </div>
   );
 };

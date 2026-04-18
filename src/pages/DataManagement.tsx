@@ -986,14 +986,10 @@ export const DataManagement = () => {
                   <div className="p-4 space-y-4">
                     <div className="flex gap-3">
                       <div className="w-6 h-6 rounded-full bg-primary/10 text-primary flex items-center justify-center text-xs font-black">1</div>
-                      <p className="text-xs text-foreground/60 leading-relaxed">Thiết lập Client ID & API Key trong phần <b>Cài đặt</b>.</p>
-                    </div>
-                    <div className="flex gap-3">
-                      <div className="w-6 h-6 rounded-full bg-primary/10 text-primary flex items-center justify-center text-xs font-black">2</div>
                       <p className="text-xs text-foreground/60 leading-relaxed">Chọn một thư mục chuyên biệt trên Drive để lưu dữ liệu.</p>
                     </div>
                     <div className="flex gap-3">
-                      <div className="w-6 h-6 rounded-full bg-primary/10 text-primary flex items-center justify-center text-xs font-black">3</div>
+                      <div className="w-6 h-6 rounded-full bg-primary/10 text-primary flex items-center justify-center text-xs font-black">2</div>
                       <p className="text-xs text-foreground/60 leading-relaxed">Dữ liệu được lưu dưới dạng .json giúp khôi phục nguyên vẹn cấu trúc.</p>
                     </div>
                   </div>

@@ -1,7 +1,7 @@
 import { 
   Users, BookOpen, Calendar, BarChart3, 
   Settings, Database, GraduationCap, School,
-  Layers, Lock
+  Layers, Lock, X
 } from 'lucide-react';
 import { clsx } from 'clsx';
 
@@ -21,17 +21,40 @@ interface SidebarProps {
   activeId: string;
   onNavigate: (id: string) => void;
   onLock: () => void;
+  isOpen: boolean;
+  onClose: () => void;
 }
 
-export const Sidebar = ({ activeId, onNavigate, onLock }: SidebarProps) => {
+export const Sidebar = ({ activeId, onNavigate, onLock, isOpen, onClose }: SidebarProps) => {
   return (
-    <div className="w-64 h-full bg-background-light/30 backdrop-blur-xl border-r border-white/10 flex flex-col p-4">
-      <div className="flex items-center gap-3 px-4 py-8">
-        <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center shadow-lg shadow-primary/30">
-          <Calendar className="text-white w-6 h-6" />
+    <>
+      {/* Backdrop (Lớp phủ mờ) */}
+      {isOpen && (
+        <div 
+          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 lg:hidden"
+          onClick={onClose}
+        />
+      )}
+
+      {/* Sidebar Container */}
+      <div className={clsx(
+        "fixed inset-y-0 left-0 w-72 h-full bg-background-light/40 backdrop-blur-2xl border-r border-white/10 flex flex-col p-4 z-[60] transition-transform duration-300 lg:static lg:translate-x-0 lg:w-64",
+        isOpen ? "translate-x-0" : "-translate-x-full"
+      )}>
+        <div className="flex items-center justify-between px-4 py-8">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center shadow-lg shadow-primary/30">
+              <Calendar className="text-white w-6 h-6" />
+            </div>
+            <h1 className="text-xl font-bold text-white tracking-tight">SnapAttend</h1>
+          </div>
+          <button 
+            onClick={onClose}
+            className="lg:hidden p-2 text-white/50 hover:text-white"
+          >
+            <X className="w-6 h-6" />
+          </button>
         </div>
-        <h1 className="text-xl font-bold text-white tracking-tight">SnapAttend</h1>
-      </div>
 
       <nav className="flex-1 space-y-1">
         {menuItems.map((item) => (

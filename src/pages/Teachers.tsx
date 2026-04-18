@@ -45,7 +45,6 @@ export const Teachers = () => {
     
     if (!formData.name.trim()) newErrors.name = 'Vui lòng nhập họ tên';
     if (!formData.teacherCode.trim()) newErrors.teacherCode = 'Vui lòng nhập mã giáo viên';
-    if (!formData.email.trim()) newErrors.email = 'Vui lòng nhập email';
 
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);

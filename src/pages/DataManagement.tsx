@@ -56,7 +56,10 @@ export const DataManagement = () => {
   
   // Cloud Sync State
   const [cloudFiles, setCloudFiles] = useState<any[]>([]);
+  const [excelCloudFiles, setExcelCloudFiles] = useState<any[]>([]);
   const [isSyncing, setIsSyncing] = useState(false);
+  const [isConnected, setIsConnected] = useState(googleDriveService.isConnected());
+  const [isCloudPickerOpen, setIsCloudPickerOpen] = useState(false);
 
   // Lấy dữ liệu từ DB để validation
   const dbClasses = useLiveQuery(() => db.classes.toArray());
@@ -64,8 +67,6 @@ export const DataManagement = () => {
   const dbTeachers = useLiveQuery(() => db.teachers.toArray());
   const dbSubjects = useLiveQuery(() => db.subjects.toArray());
   const dbSections = useLiveQuery(() => db.sections.toArray());
-  const [isCloudPickerOpen, setIsCloudPickerOpen] = useState(false);
-  const [excelCloudFiles, setExcelCloudFiles] = useState<any[]>([]);
   const academicYears = useLiveQuery(() => db.academicYears.toArray());
   const [selectedYearToDelete, setSelectedYearToDelete] = useState('');
 
@@ -134,16 +135,43 @@ export const DataManagement = () => {
   const fetchCloudFiles = async () => {
     try {
       setIsSyncing(true);
+      // Kiểm tra kết nối
+      await googleDriveService.authenticate();
+      setIsConnected(true);
       const files = await googleDriveService.listFiles('application/json');
       setCloudFiles(files.sort((a, b) => new Date(b.createdTime).getTime() - new Date(a.createdTime).getTime()));
     } catch (error) {
       console.error(error);
+      setIsConnected(false);
+    } finally {
+      setIsSyncing(false);
+    }
+  };
+
+  const handleConnectDrive = async () => {
+    setIsSyncing(true);
+    try {
+      await googleDriveService.authenticate();
+      setIsConnected(true);
+      alert('Đã kết nối Google Drive thành công!');
+      fetchCloudFiles();
+    } catch (error) {
+      console.error(error);
+      alert('Không thể kết nối Google Drive. Vui lòng kiểm tra pop-up hoặc cài đặt.');
     } finally {
       setIsSyncing(false);
     }
   };
 
   const handleCloudBackup = async () => {
+    // Đăng nhập ngay lập tức để giữ user gesture (quan trọng cho mobile/PWA)
+    try {
+      await googleDriveService.authenticate();
+      setIsConnected(true);
+    } catch (error) {
+      return alert('Vui lòng cho phép mở cửa sổ đăng nhập Google.');
+    }
+
     setIsSyncing(true);
     try {
       const content = await backupService.exportData();
@@ -162,7 +190,15 @@ export const DataManagement = () => {
   const handleRestoreFromCloud = async (fileId: string) => {
     if (!confirm('Bạn có chắc chắn muốn khôi phục dữ liệu từ bản sao lưu này? Dữ liệu hiện tại sẽ bị ghi đè.')) return;
     
-    setIsProcessing(true);
+    // Đăng nhập ngay lập tức để giữ user gesture
+    try {
+      await googleDriveService.authenticate();
+      setIsConnected(true);
+    } catch (error) {
+      return alert('Vui lòng cho phép mở cửa sổ đăng nhập Google.');
+    }
+
+    setIsSyncing(true);
     try {
       const buffer = await googleDriveService.downloadFile(fileId);
       const content = new TextDecoder().decode(buffer);
@@ -177,7 +213,7 @@ export const DataManagement = () => {
       console.error(error);
       alert('Lỗi khôi phục: ' + (typeof error === 'string' ? error : 'Vui lòng kiểm tra lại cấu hình'));
     } finally {
-      setIsProcessing(false);
+      setIsSyncing(false);
     }
   };
 
@@ -453,6 +489,16 @@ export const DataManagement = () => {
   const handleExport = async (isCloud: boolean = false) => {
     if (exportSelection.size === 0) return alert('Vui lòng chọn ít nhất một danh mục để xuất!');
 
+    if (isCloud) {
+      // Đăng nhập ngay lập tức để giữ user gesture
+      try {
+        await googleDriveService.authenticate();
+        setIsConnected(true);
+      } catch (error) {
+        return alert('Vui lòng cho phép mở cửa sổ đăng nhập Google.');
+      }
+    }
+
     setIsProcessing(true);
     try {
       const wb = XLSX.utils.book_new();
@@ -516,6 +562,14 @@ export const DataManagement = () => {
   };
 
   const handleCloudImport = async () => {
+    // Đăng nhập ngay lập tức để giữ user gesture
+    try {
+      await googleDriveService.authenticate();
+      setIsConnected(true);
+    } catch (error) {
+      return alert('Vui lòng cho phép mở cửa sổ đăng nhập Google.');
+    }
+
     try {
       setIsSyncing(true);
       const files = await googleDriveService.listFiles('application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
@@ -880,24 +934,46 @@ export const DataManagement = () => {
           >
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
               <div className="lg:col-span-1 space-y-6">
-                <Card className="border-none shadow-none bg-blue-500/5 overflow-hidden">
-                  <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/10 rounded-full -mr-16 -mt-16 blur-3xl" />
+                <Card className="border-none shadow-none bg-primary/5 overflow-hidden">
+                  <div className="absolute top-0 right-0 w-32 h-32 bg-primary/10 rounded-full -mr-16 -mt-16 blur-3xl" />
                   <div className="relative p-6">
-                    <div className="w-12 h-12 bg-blue-500/20 rounded-xl flex items-center justify-center mb-4">
-                      <Cloud className="w-6 h-6 text-blue-500" />
+                    <div className="flex items-center justify-between mb-4">
+                      <div className="w-12 h-12 bg-primary/20 rounded-xl flex items-center justify-center">
+                        <Cloud className="w-6 h-6 text-primary" />
+                      </div>
+                      <div className={clsx(
+                        "px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest",
+                        isConnected ? "bg-green-500/10 text-green-500" : "bg-red-500/10 text-red-500"
+                      )}>
+                        {isConnected ? 'Đã kết nối' : 'Chưa kết nối'}
+                      </div>
                     </div>
                     <h3 className="text-xl font-bold text-foreground mb-2">Đồng bộ hoàn hảo</h3>
                     <p className="text-sm text-foreground/40 mb-6 leading-relaxed">
                       Tất cả dữ liệu được đóng gói thành file JSON và lưu trữ an toàn trong thư mục bạn chọn trên Google Drive.
                     </p>
-                    <Button 
-                      className="w-full h-12 bg-blue-500 hover:bg-blue-600 text-white shadow-xl shadow-blue-500/20"
-                      onClick={handleCloudBackup}
-                      disabled={isSyncing}
-                    >
-                      {isSyncing ? <RefreshCw className="w-4 h-4 animate-spin" /> : <CloudUpload className="w-4 h-4" />}
-                      Sao lưu lên Đám mây
-                    </Button>
+                    
+                    <div className="space-y-3">
+                      {!isConnected && (
+                        <Button 
+                          variant="secondary"
+                          className="w-full h-12 border-primary/30 text-primary hover:bg-primary/10"
+                          onClick={handleConnectDrive}
+                          disabled={isSyncing}
+                        >
+                          <RefreshCw className={clsx("w-4 h-4", isSyncing && "animate-spin")} />
+                          Kết nối Google Drive
+                        </Button>
+                      )}
+                      <Button 
+                        className="w-full h-12 shadow-xl shadow-primary/20"
+                        onClick={handleCloudBackup}
+                        disabled={isSyncing}
+                      >
+                        {isSyncing ? <RefreshCw className="w-4 h-4 animate-spin" /> : <CloudUpload className="w-4 h-4" />}
+                        Sao lưu lên Đám mây
+                      </Button>
+                    </div>
                   </div>
                 </Card>
 

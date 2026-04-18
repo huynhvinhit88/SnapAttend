@@ -206,6 +206,10 @@ class GoogleDriveService {
 
     return await response.arrayBuffer();
   }
+
+  isConnected(): boolean {
+    return !!this.accessToken;
+  }
 }
 
 export const googleDriveService = new GoogleDriveService();

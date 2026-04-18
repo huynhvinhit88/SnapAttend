@@ -206,7 +206,7 @@ export const Sessions = ({ onStartAttendance }: SessionsProps) => {
                   )}>
                     <Clock className="w-6 h-6" />
                   </div>
-                  <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity z-10">
+                  <div className="flex gap-2 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity z-10">
                     <Button variant="ghost" className="p-2 w-9 h-9 rounded-xl text-red-500 hover:bg-red-500/10" title="Xóa" onClick={() => handleDeleteSession(item.id!)}>
                       <Trash2 className="w-4.5 h-4.5" />
                     </Button>

@@ -187,7 +187,7 @@ export const Students = () => {
               transition={{ delay: index * 0.03 }}
             >
               <Card className="relative group p-4">
-                <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity flex gap-2">
+                <div className="absolute top-2 right-2 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity flex gap-2">
                   <Button variant="ghost" className="p-2 text-primary hover:bg-primary/10" onClick={() => handleEditStudent(item)}>
                     <Pencil className="w-5 h-5" />
                   </Button>

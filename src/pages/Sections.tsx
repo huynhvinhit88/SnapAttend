@@ -216,7 +216,7 @@ export const Sections = () => {
                   <div className="w-12 h-12 bg-primary/10 rounded-2xl flex items-center justify-center shadow-inner group-hover:scale-110 transition-transform">
                     <Database className="w-6 h-6 text-primary" />
                   </div>
-                  <div className="flex gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity z-10">
+                  <div className="flex gap-1.5 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity z-10">
                     <Button variant="ghost" className="p-2 w-9 h-9 rounded-xl text-primary hover:bg-primary/10" title="Sửa" onClick={() => handleEditSection(item)}>
                       <Pencil className="w-4.5 h-4.5" />
                     </Button>

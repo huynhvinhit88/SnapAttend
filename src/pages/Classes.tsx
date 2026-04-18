@@ -148,7 +148,7 @@ export const Classes = () => {
             transition={{ delay: index * 0.05 }}
           >
             <Card className="relative group overflow-hidden border-foreground/5 hover:border-primary/30 transition-all hover:shadow-2xl hover:shadow-primary/5">
-              <div className="absolute top-0 right-0 p-4 opacity-0 group-hover:opacity-100 transition-opacity flex gap-2 z-10">
+              <div className="absolute top-0 right-0 p-4 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity flex gap-2 z-10">
                 <Button 
                   variant="ghost" 
                   className="p-2 w-10 h-10 rounded-xl text-primary hover:bg-primary/10"

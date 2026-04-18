@@ -143,7 +143,7 @@ export const Teachers = () => {
             transition={{ delay: index * 0.05 }}
           >
             <Card className="relative group">
-              <div className="absolute top-0 right-0 p-4 opacity-0 group-hover:opacity-100 transition-opacity flex gap-2">
+              <div className="absolute top-0 right-0 p-4 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity flex gap-2">
                 <Button 
                   variant="ghost" 
                   className="p-2 text-primary hover:bg-primary/10"

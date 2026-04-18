@@ -74,9 +74,6 @@ export const QuickAttendanceFAB = ({ onNavigate, activeId }: QuickAttendanceFABP
               <p className="text-[10px] text-primary font-black uppercase tracking-widest leading-none mb-1 opacity-70">Truy cập nhanh</p>
               <p className="text-sm font-black text-foreground leading-none">Điểm danh Hôm nay</p>
             </div>
-
-            {/* Pulsing indicator */}
-            <div className="absolute top-2 right-2 w-2 h-2 bg-accent rounded-full animate-ping" />
           </button>
         </motion.div>
       )}

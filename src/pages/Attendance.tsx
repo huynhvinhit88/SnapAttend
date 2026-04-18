@@ -157,7 +157,7 @@ export const Attendance = ({ sessionId, onBack }: AttendanceProps) => {
           onClick={async () => {
              if(confirm('Hoàn tất điểm danh cho ca học này? Những học sinh chưa được chạm sẽ được mặc định là có mặt.')) {
                try {
-                 const missingStudents = enrolledStudents.filter(s => !records?.some(r => r.studentId === s.id));
+                 const missingStudents = enrolledStudents.filter(s => s && !records?.some(r => r.studentId === s.id));
                  
                  await db.transaction('rw', [db.attendance, db.sessions], async () => {
                    if (missingStudents.length > 0) {

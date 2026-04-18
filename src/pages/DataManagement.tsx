@@ -256,9 +256,9 @@ export const DataManagement = () => {
             }
             result.transformedData = {
               name: name?.toString(),
-              grade: (row['Khối'] || row['grade'])?.toString() || 'Khối 10',
+              grade: (row['Khối đào tạo'] || row['Khối'] || row['grade'])?.toString() || 'Khối 10',
               major: (row['Chuyên ngành'] || row['major'])?.toString(),
-              academicYear: (row['Niên khóa'] || row['academicYear'])?.toString(),
+              academicYear: (row['Năm học'] || row['Niên khóa'] || row['academicYear'])?.toString(),
               createdAt: Date.now()
             };
             break;
@@ -286,6 +286,7 @@ export const DataManagement = () => {
                   name: name.toString(),
                   classId: matchedClass.id,
                   email: (row['Email'] || row['email'])?.toString(),
+                  academicYear: (row['Niên khóa'] || row['academicYear'])?.toString(),
                   createdAt: Date.now()
                 };
                 if (dbStudents?.some(s => s.studentCode === code)) {
@@ -456,8 +457,8 @@ export const DataManagement = () => {
     try {
       const wb = XLSX.utils.book_new();
       const CATEGORY_HEADERS: Record<Category, string[]> = {
-        classes: ['Tên lớp', 'Khối', 'Chuyên ngành', 'Niên khóa'],
-        students: ['Mã học sinh', 'Họ và tên', 'Tên lớp', 'Email'],
+        classes: ['Tên lớp', 'Khối đào tạo', 'Chuyên ngành', 'Năm học'],
+        students: ['Mã học sinh', 'Họ và tên', 'Tên lớp', 'Email', 'Niên khóa'],
         teachers: ['Mã giáo viên', 'Họ và tên', 'Khoa/Bộ môn'],
         subjects: ['Mã môn học', 'Tên môn học', 'Số tín chỉ'],
         sections: ['Tên lớp HP', 'Tên môn học', 'Tên giáo viên', 'Học kỳ', 'Năm học'],
@@ -473,7 +474,7 @@ export const DataManagement = () => {
           case 'classes': rows = data.map((d: any) => [d.name, d.grade, d.major || '', d.academicYear]); break;
           case 'students':
             rows = data.map((d: any) => [
-              d.studentCode, d.name, dbClasses?.find(c => c.id === d.classId)?.name || 'N/A', d.email || ''
+              d.studentCode, d.name, dbClasses?.find(c => c.id === d.classId)?.name || 'N/A', d.email || '', d.academicYear || ''
             ]);
             break;
           case 'teachers': rows = data.map((d: any) => [d.teacherCode, d.name, d.department || '']); break;

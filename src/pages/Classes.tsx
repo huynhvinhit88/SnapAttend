@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
-import { Plus, School, Trash2, Search, Pencil } from 'lucide-react';
+import { Plus, School, Trash2, Search, Pencil, Users, TrendingUp } from 'lucide-react';
 import { db } from '../db/db';
 import { Button } from '../components/ui/Button';
 import { Card } from '../components/ui/Card';
@@ -8,6 +8,7 @@ import { Input } from '../components/ui/Input';
 import { Modal } from '../components/ui/Modal';
 import { motion } from 'framer-motion';
 import { useFilter } from '../context/FilterContext';
+import { PageHeader } from '../components/ui/PageHeader';
 
 export const Classes = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -18,23 +19,29 @@ export const Classes = () => {
   const [formData, setFormData] = useState({
     name: '',
     grade: '',
-    major: '',
-    academicYear: ''
+    academicYear: '',
+    major: ''
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
 
-  // Truy vấn dữ liệu từ IndexedDB (Tự động cập nhật khi có thay đổi)
-  const classes = useLiveQuery(
-    () => db.classes.toArray(),
-    []
-  );
+  const classes = useLiveQuery(() => db.classes.toArray());
+  const totalStudents = useLiveQuery(() => db.students.count());
+
+  // Lọc danh sách lớp dựa trên từ khóa tìm kiếm
+  const filteredClasses = useMemo(() => {
+    if (!classes) return [];
+    return classes.filter(c => 
+      c.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (c.major && c.major.toLowerCase().includes(searchTerm.toLowerCase()))
+    );
+  }, [classes, searchTerm]);
 
   const handleAddClass = async (e: React.FormEvent) => {
     e.preventDefault();
     const newErrors: Record<string, string> = {};
     
-    if (!formData.name.trim()) newErrors.name = 'Vui lòng nhập tên lớp học';
-    if (!formData.grade) newErrors.grade = 'Vui lòng chọn khối';
+    if (!formData.name.trim()) newErrors.name = 'Vui lòng nhập tên lớp';
+    if (!formData.grade.trim()) newErrors.grade = 'Vui lòng chọn khối';
     if (!formData.academicYear.trim()) newErrors.academicYear = 'Vui lòng nhập niên khóa';
 
     if (Object.keys(newErrors).length > 0) {
@@ -44,144 +51,166 @@ export const Classes = () => {
 
     try {
       if (editingId) {
-        await db.classes.update(editingId, formData);
+        await db.classes.update(editingId, {
+          ...formData,
+          updatedAt: Date.now()
+        });
       } else {
         await db.classes.add({
           ...formData,
           createdAt: Date.now()
         });
       }
-      
-      setFormData({ name: '', grade: '', major: '', academicYear: '' });
-      setErrors({});
+      setFormData({ name: '', grade: '', academicYear: '', major: '' });
       setEditingId(null);
+      setErrors({});
       setIsModalOpen(false);
     } catch (error) {
-      console.error('Lỗi lưu lớp học:', error);
-      alert('Không thể lưu lớp học. Vui lòng thử lại!');
+      console.error('Lỗi khi lưu lớp học:', error);
+      alert('Không thể lưu thông tin lớp học. Vui lòng thử lại!');
     }
   };
 
-  const handleEditClass = (cls: any) => {
+  const handleEditClass = (item: any) => {
     setFormData({
-      name: cls.name,
-      grade: cls.grade,
-      major: cls.major || '',
-      academicYear: cls.academicYear
+      name: item.name,
+      grade: item.grade,
+      academicYear: item.academicYear,
+      major: item.major || ''
     });
-    setEditingId(cls.id);
+    setEditingId(item.id);
+    setErrors({});
     setIsModalOpen(true);
   };
 
   const handleDeleteClass = async (id: number) => {
-    if (confirm('Bạn có chắc chắn muốn xóa lớp này không? Dữ liệu liên quan có thể bị ảnh hưởng.')) {
-      await db.classes.delete(id);
+    if (confirm('Bạn có chắc chắn muốn xóa lớp học này? Mọi dữ liệu liên quan đến học sinh và ghi danh trong lớp sẽ bị xóa vĩnh viễn.')) {
+      try {
+        await db.transaction('rw', [db.classes, db.students, db.enrollments], async () => {
+          await db.classes.delete(id);
+          const studentsInClass = await db.students.where('classId').equals(id).toArray();
+          const studentIds = studentsInClass.map(s => s.id!);
+          await db.students.where('classId').equals(id).delete();
+          await db.enrollments.where('studentId').anyOf(studentIds).delete();
+        });
+      } catch (error) {
+        console.error('Lỗi khi xóa lớp học:', error);
+        alert('Lỗi: Không thể xóa lớp học.');
+      }
     }
   };
 
-  const filteredClasses = classes?.filter(c => 
-    c.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    c.major?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
-
   return (
-    <div className="space-y-8">
-      {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-bold text-foreground mb-2">Quản lý Lớp</h1>
-          <p className="text-foreground/50">Danh mục các lớp học hành chính trong hệ thống.</p>
-        </div>
+    <div className="space-y-8 pb-20">
+      <PageHeader 
+        title="Lớp"
+        description="Quản lý danh mục các lớp học hành chính trong hệ thống."
+        icon={<School className="w-8 h-8" />}
+        breadcrumbs={[
+          { label: 'Trang chủ' },
+          { label: 'Danh mục', active: true }
+        ]}
+        stats={[
+          { label: 'Tổng số lớp', value: classes?.length || 0, icon: School },
+          { label: 'Tổng học sinh', value: totalStudents || 0, icon: Users, color: 'text-primary' },
+          { label: 'Tỉ lệ lấp đầy', value: '100%', icon: TrendingUp, color: 'text-green-500' },
+        ]}
+      >
         <Button onClick={() => {
           setEditingId(null);
-          setFormData({ name: '', grade: '', major: '', academicYear: '' });
+          setFormData({ name: '', grade: '', academicYear: '', major: '' });
+          setErrors({});
           setIsModalOpen(true);
-        }} className="w-full md:w-auto">
+        }}>
           <Plus className="w-5 h-5" />
           Thêm Lớp Mới
         </Button>
-      </div>
+      </PageHeader>
 
-      {/* Search Bar */}
-      <div className="relative">
-        <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-foreground/30" />
+      <div className="relative group">
+        <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-foreground/30 transition-colors group-focus-within:text-primary" />
         <Input 
-          className="pl-12" 
+          className="pl-12 h-14 text-lg bg-background-light/50 backdrop-blur-xl border-foreground/10 focus:border-primary/50 focus:ring-4 focus:ring-primary/5 shadow-inner" 
           placeholder="Tìm kiếm theo tên lớp hoặc chuyên ngành..." 
           value={searchTerm}
           onChange={(e) => updateFilter('classes', { searchTerm: e.target.value })}
         />
       </div>
 
-      {/* Grid Danh sách */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {filteredClasses?.map((item, index) => (
           <motion.div
             key={item.id}
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
             transition={{ delay: index * 0.05 }}
           >
-            <Card className="relative group overflow-hidden">
-              <div className="absolute top-0 right-0 p-4 opacity-0 group-hover:opacity-100 transition-opacity flex gap-2">
+            <Card className="relative group overflow-hidden border-foreground/5 hover:border-primary/30 transition-all hover:shadow-2xl hover:shadow-primary/5">
+              <div className="absolute top-0 right-0 p-4 opacity-0 group-hover:opacity-100 transition-opacity flex gap-2 z-10">
                 <Button 
                   variant="ghost" 
-                  className="p-2 text-primary hover:bg-primary/10"
+                  className="p-2 w-10 h-10 rounded-xl text-primary hover:bg-primary/10"
                   onClick={() => handleEditClass(item)}
+                  title="Sửa"
                 >
                   <Pencil className="w-5 h-5" />
                 </Button>
                 <Button 
                   variant="ghost" 
-                  className="p-2 text-red-500 hover:bg-red-500/10"
+                  className="p-2 w-10 h-10 rounded-xl text-red-500 hover:bg-red-500/10"
                   onClick={() => handleDeleteClass(item.id!)}
+                  title="Xóa"
                 >
                   <Trash2 className="w-5 h-5" />
                 </Button>
               </div>
               
-              <div className="flex items-start gap-4">
-                <div className="w-12 h-12 bg-primary/10 rounded-2xl flex items-center justify-center">
-                  <School className="w-6 h-6 text-primary" />
+              <div className="flex items-start gap-5">
+                <div className="w-14 h-14 bg-primary/10 rounded-[1.25rem] flex items-center justify-center shadow-inner group-hover:scale-110 transition-transform duration-500">
+                  <School className="w-7 h-7 text-primary" />
                 </div>
-                <div>
-                  <h3 className="text-xl font-bold text-foreground">{item.name}</h3>
-                  <p className="text-primary text-sm font-medium">{item.grade}</p>
+                <div className="flex-1 min-w-0">
+                  <h3 className="text-xl font-black text-foreground truncate">{item.name}</h3>
+                  <div className="inline-flex px-2.5 py-0.5 rounded-full bg-primary/20 text-primary text-[10px] font-bold uppercase tracking-wider mt-1">
+                    {item.grade}
+                  </div>
                 </div>
               </div>
 
-              <div className="mt-6 pt-6 border-t border-foreground/10 grid grid-cols-2 gap-4">
-                <div>
-                  <p className="text-xs text-foreground/30 uppercase font-bold tracking-wider">Chuyên ngành</p>
-                  <p className="text-foreground/80 text-sm mt-1">{item.major || 'N/A'}</p>
+              <div className="mt-8 pt-6 border-t border-foreground/5 grid grid-cols-1 gap-4">
+                <div className="flex justify-between items-center group/item">
+                  <span className="text-[10px] text-foreground/30 uppercase font-black tracking-widest">Chuyên ngành</span>
+                  <span className="text-foreground/80 text-sm font-medium">{item.major || 'N/A'}</span>
                 </div>
-                <div>
-                  <p className="text-xs text-foreground/30 uppercase font-bold tracking-wider">Niên khóa</p>
-                  <p className="text-foreground/80 text-sm mt-1">{item.academicYear}</p>
+                <div className="flex justify-between items-center group/item">
+                  <span className="text-[10px] text-foreground/30 uppercase font-black tracking-widest">Niên khóa</span>
+                  <span className="text-foreground/80 text-sm font-medium">{item.academicYear}</span>
                 </div>
               </div>
+              
+              {/* Decorative accent orb */}
+              <div className="absolute -bottom-10 -left-10 w-32 h-32 bg-primary/5 rounded-full blur-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-700" />
             </Card>
           </motion.div>
         ))}
       </div>
 
-      {/* Empty State */}
       {filteredClasses?.length === 0 && (
-        <div className="text-center py-20 px-4 bg-foreground/5 rounded-3xl border border-dashed border-foreground/10">
-          <School className="w-12 h-12 text-foreground/20 mx-auto mb-4" />
-          <p className="text-foreground/40 font-medium">Chưa có dữ liệu lớp học nào được tìm thấy.</p>
-        </div>
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-center py-24 px-4 bg-background-light/30 backdrop-blur-3xl rounded-[3rem] border border-dashed border-foreground/10">
+          <School className="w-20 h-20 text-foreground/5 mx-auto mb-6" />
+          <p className="text-foreground/40 font-bold text-lg">Chưa có dữ liệu lớp học nào được tìm thấy.</p>
+          <p className="text-foreground/20 text-sm mt-2">Hãy nhấn 'Thêm Lớp Mới' để bắt đầu!</p>
+        </motion.div>
       )}
 
-      {/* Modal Thêm Mới/Sửa */}
       <Modal 
         isOpen={isModalOpen} 
         onClose={() => setIsModalOpen(false)} 
-        title={editingId ? "Sửa Thông Tin Lớp" : "Thêm Lớp Học Mới"}
+        title={editingId ? "Cập nhật Thông tin Lớp" : "Thêm Lớp Hành Chính Mới"}
       >
-        <form noValidate onSubmit={handleAddClass} className="space-y-4">
+        <form noValidate onSubmit={handleAddClass} className="space-y-6 pt-4">
           <Input 
-            label="Tên Lớp (VD: 10A1)" 
+            label="Tên Lớp (VD: 10A1, CNTT-K15)" 
             value={formData.name}
             error={errors.name}
             onChange={(e) => {
@@ -190,7 +219,7 @@ export const Classes = () => {
             }}
           />
           <Input 
-            label="Khối" 
+            label="Khối đào tạo" 
             type="select"
             error={errors.grade}
             options={[
@@ -198,6 +227,10 @@ export const Classes = () => {
               { value: 'Khối 10', label: 'Khối 10' },
               { value: 'Khối 11', label: 'Khối 11' },
               { value: 'Khối 12', label: 'Khối 12' },
+              { value: 'Năm nhất', label: 'Đại học - Năm nhất' },
+              { value: 'Năm hai', label: 'Đại học - Năm hai' },
+              { value: 'Năm ba', label: 'Đại học - Năm ba' },
+              { value: 'Năm bốn', label: 'Đại học - Năm bốn' },
             ]}
             value={formData.grade}
             onChange={(e) => {
@@ -206,12 +239,14 @@ export const Classes = () => {
             }}
           />
           <Input 
-            label="Chuyên ngành / Khối chuyên (Nếu có)" 
+            label="Chuyên ngành / Khối chuyên (Tùy chọn)" 
+            placeholder="VD: Chuyên Toán, Công nghệ thông tin..."
             value={formData.major}
             onChange={(e) => setFormData({...formData, major: e.target.value})}
           />
           <Input 
-            label="Niên khóa (VD: 2024 - 2027)" 
+            label="Niên khóa" 
+            placeholder="VD: 2024 - 2027"
             value={formData.academicYear}
             error={errors.academicYear}
             onChange={(e) => {
@@ -219,12 +254,12 @@ export const Classes = () => {
               if (errors.academicYear) setErrors({...errors, academicYear: ''});
             }}
           />
-          <div className="flex gap-3 pt-4">
-            <Button type="button" variant="secondary" className="flex-1" onClick={() => setIsModalOpen(false)}>
-              Hủy
+          <div className="flex gap-4 pt-6">
+            <Button type="button" variant="secondary" className="flex-1 h-12 rounded-2xl" onClick={() => setIsModalOpen(false)}>
+              Hủy bỏ
             </Button>
-            <Button type="submit" className="flex-1">
-              {editingId ? "Cập Nhật" : "Lưu Lớp Học"}
+            <Button type="submit" className="flex-1 h-12 rounded-2xl shadow-lg shadow-primary/20">
+              {editingId ? "Lưu thay đổi" : "Tạo Lớp Học"}
             </Button>
           </div>
         </form>

@@ -1,6 +1,6 @@
 import React, { useState, useRef, useMemo } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
-import { Plus, Trash2, Search, Camera, Upload, Pencil } from 'lucide-react';
+import { Plus, Trash2, Search, Camera, Upload, Pencil, Users, School } from 'lucide-react';
 import { db } from '../db/db';
 import { Button } from '../components/ui/Button';
 import { Card } from '../components/ui/Card';
@@ -9,6 +9,8 @@ import { Modal } from '../components/ui/Modal';
 import { imageService } from '../services/image.service';
 import { motion } from 'framer-motion';
 import { useFilter } from '../context/FilterContext';
+
+import { PageHeader } from '../components/ui/PageHeader';
 
 export const Students = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -28,6 +30,7 @@ export const Students = () => {
 
   const classes = useLiveQuery(() => db.classes.toArray());
   const students = useLiveQuery(() => db.students.toArray());
+  const classesCount = useLiveQuery(() => db.classes.count());
 
   const filteredStudents = useMemo(() => {
     if (!students) return [];
@@ -114,11 +117,19 @@ export const Students = () => {
 
   return (
     <div className="space-y-8">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-bold text-foreground mb-2">Quản lý Học sinh</h1>
-          <p className="text-foreground/50">Danh sách học sinh theo từng lớp học.</p>
-        </div>
+      <PageHeader
+        title="Học sinh"
+        description="Danh sách học sinh chính thức theo từng lớp học."
+        icon={<Users className="w-8 h-8" />}
+        breadcrumbs={[
+          { label: 'Trang chủ' },
+          { label: 'Học tập', active: true }
+        ]}
+        stats={[
+          { label: 'Tổng số học sinh', value: students?.length || 0, icon: Users },
+          { label: 'Số lớp hành chính', value: classesCount || 0, icon: School, color: 'text-accent' },
+        ]}
+      >
         <Button onClick={() => {
           setEditingId(null);
           setFormData({ name: '', studentCode: '', classId: '', avatar: '' });
@@ -127,27 +138,37 @@ export const Students = () => {
           <Plus className="w-5 h-5" />
           Thêm Học Sinh
         </Button>
-      </div>
+      </PageHeader>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <Input 
-          placeholder="Tìm theo tên, mã học sinh..." 
-          icon={<Search className="w-5 h-5 flex-shrink-0" />}
-          value={searchTerm}
-          onChange={(e) => updateFilter('students', { searchTerm: e.target.value })}
-          className="w-full md:w-80"
-        />
-        <Input 
-          type="select"
-          options={[
-            { value: 'all', label: 'Tất cả các lớp' },
-            ...(classes?.map(c => ({ value: c.id!.toString(), label: c.name })) || [])
-          ]}
-          value={selectedClassId}
-          onChange={(e) => updateFilter('students', { selectedClassId: e.target.value })}
-          className="w-full md:w-64"
-        />
-      </div>
+      {/* Search & Filter Card */}
+      <Card className="flex flex-col md:flex-row items-end gap-6 relative overflow-hidden p-6 border-none shadow-none">
+        <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full -mr-16 -mt-16 blur-3xl" />
+        
+        <div className="flex-1 w-full relative z-10">
+          <Input 
+            label="Tìm kiếm học sinh"
+            placeholder="Tìm theo tên, mã học sinh..." 
+            icon={<Search className="w-4 h-4" />}
+            className="h-12"
+            value={searchTerm}
+            onChange={(e) => updateFilter('students', { searchTerm: e.target.value })}
+          />
+        </div>
+        
+        <div className="w-full md:w-64 relative z-10">
+          <Input 
+            label="Lớp hành chính"
+            type="select"
+            className="h-12"
+            options={[
+              { value: 'all', label: 'Tất cả các lớp' },
+              ...(classes?.map(c => ({ value: c.id!.toString(), label: c.name })) || [])
+            ]}
+            value={selectedClassId}
+            onChange={(e) => updateFilter('students', { selectedClassId: e.target.value })}
+          />
+        </div>
+      </Card>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {filteredStudents?.map((item, index) => {

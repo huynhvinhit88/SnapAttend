@@ -7,7 +7,7 @@ import { clsx } from 'clsx';
 import { useTheme } from '../../context/ThemeContext';
 
 const menuItems = [
-  { id: 'classes', label: 'Quản lý Lớp', icon: School },
+  { id: 'classes', label: 'Lớp', icon: School },
   { id: 'students', label: 'Học sinh', icon: Users },
   { id: 'teachers', label: 'Giáo viên', icon: GraduationCap },
   { id: 'subjects', label: 'Môn học', icon: BookOpen },

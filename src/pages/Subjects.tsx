@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { Plus, BookOpen, Trash2, Search, Pencil } from 'lucide-react';
 import { db } from '../db/db';
@@ -8,29 +8,42 @@ import { Input } from '../components/ui/Input';
 import { Modal } from '../components/ui/Modal';
 import { motion } from 'framer-motion';
 import { useFilter } from '../context/FilterContext';
+import { PageHeader } from '../components/ui/PageHeader';
 
 export const Subjects = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const { filters, updateFilter } = useFilter();
   const { searchTerm } = filters.subjects;
   const [editingId, setEditingId] = useState<number | null>(null);
-
+  
   const [formData, setFormData] = useState({
-    code: '',
     name: '',
-    credits: '3'
+    code: '',
+    credits: 0,
+    department: ''
   });
+
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   const subjects = useLiveQuery(() => db.subjects.toArray());
+  const subjectCount = useLiveQuery(() => db.subjects.count());
+
+  const filteredSubjects = useMemo(() => {
+    if (!subjects) return [];
+    return subjects.filter(s => 
+      s.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      s.code.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      s.department?.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+  }, [subjects, searchTerm]);
 
   const handleAddSubject = async (e: React.FormEvent) => {
     e.preventDefault();
     const newErrors: Record<string, string> = {};
     
-    if (!formData.code.trim()) newErrors.code = 'Vui lòng nhập mã môn học';
     if (!formData.name.trim()) newErrors.name = 'Vui lòng nhập tên môn học';
-    if (!formData.credits.trim()) newErrors.credits = 'Vui lòng nhập số tín chỉ/tiết';
+    if (!formData.code.trim()) newErrors.code = 'Vui lòng nhập mã môn học';
+    if (formData.credits < 0) newErrors.credits = 'Số tín chỉ không hợp lệ';
 
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
@@ -38,35 +51,31 @@ export const Subjects = () => {
     }
 
     try {
-      const data = {
-        ...formData,
-        credits: parseInt(formData.credits)
-      };
-
       if (editingId) {
-        await db.subjects.update(editingId, data);
+        await db.subjects.update(editingId, {
+          ...formData,
+          createdAt: Date.now()
+        });
       } else {
         await db.subjects.add({
-          ...data,
+          ...formData,
           createdAt: Date.now()
         });
       }
-      
-      setFormData({ code: '', name: '', credits: '3' });
-      setErrors({});
+      setFormData({ name: '', code: '', credits: 0, department: '' });
       setEditingId(null);
       setIsModalOpen(false);
     } catch (error) {
-      console.error('Lỗi lưu môn học:', error);
-      alert('Không thể lưu môn học. Vui lòng thử lại!');
+      console.error('Lỗi khi lưu môn học:', error);
     }
   };
 
   const handleEditSubject = (subject: any) => {
     setFormData({
-      code: subject.code,
       name: subject.name,
-      credits: subject.credits.toString()
+      code: subject.code,
+      credits: subject.credits,
+      department: subject.department || ''
     });
     setEditingId(subject.id);
     setIsModalOpen(true);
@@ -78,27 +87,30 @@ export const Subjects = () => {
     }
   };
 
-  const filteredSubjects = subjects?.filter(s => 
-    s.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    s.code.toLowerCase().includes(searchTerm.toLowerCase())
-  );
-
   return (
     <div className="space-y-8">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-bold text-foreground mb-2">Quản lý Môn học</h1>
-          <p className="text-foreground/50">Danh mục các môn học/tiết học trong chương trình.</p>
-        </div>
+      <PageHeader
+        title="Môn học"
+        description="Danh sách các bộ môn đào tạo chính thức trong chương trình học."
+        icon={<BookOpen className="w-8 h-8" />}
+        breadcrumbs={[
+          { label: 'Trang chủ' },
+          { label: 'Đào tạo', active: true }
+        ]}
+        stats={[
+          { label: 'Tổng số môn học', value: subjectCount || 0, icon: BookOpen, color: 'text-indigo-400' },
+        ]}
+      >
         <Button onClick={() => {
           setEditingId(null);
-          setFormData({ code: '', name: '', credits: '3' });
+          setFormData({ name: '', code: '', credits: 0, department: '' });
+          setErrors({});
           setIsModalOpen(true);
         }}>
           <Plus className="w-5 h-5" />
           Thêm Môn Học
         </Button>
-      </div>
+      </PageHeader>
 
       <div className="relative">
         <Input 

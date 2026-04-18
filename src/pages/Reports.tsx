@@ -1,12 +1,13 @@
 import { useMemo } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
-import { FileSpreadsheet, Filter, CheckCircle2, Clock, XCircle, Calendar, BookOpen, Layers, Trash2 } from 'lucide-react';
+import { FileSpreadsheet, Filter, CheckCircle2, Clock, XCircle, Calendar, BookOpen, Layers, Trash2, BarChart3 } from 'lucide-react';
 import { db } from '../db/db';
 import { Button } from '../components/ui/Button';
 import { Card } from '../components/ui/Card';
 import { Input } from '../components/ui/Input';
 import { format, parseISO } from 'date-fns';
 import { useFilter } from '../context/FilterContext';
+import { PageHeader } from '../components/ui/PageHeader';
 
 // Component hiển thị bảng điểm danh cho một Ca học cụ thể
 const SessionReportTable = ({ 
@@ -173,19 +174,19 @@ export const Reports = () => {
 
   return (
     <div className="space-y-8 pb-20">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-bold text-foreground mb-2">Báo cáo điểm danh</h1>
-          <p className="text-foreground/50">Truy vấn và xuất dữ liệu thống kê chi tiết theo bộ lọc.</p>
-        </div>
+      <PageHeader
+        title="Báo cáo điểm danh"
+        description="Truy vấn và xuất dữ liệu thống kê chi tiết theo bộ lọc."
+        icon={<BarChart3 className="w-8 h-8" />}
+      >
         <Button onClick={handleExportCSV} disabled={matchingSessions.length === 0}>
           <FileSpreadsheet className="w-5 h-5" />
           Xuất CSV Tổng hợp
         </Button>
-      </div>
+      </PageHeader>
 
       {/* Advanced Filter Card */}
-      <Card className="flex flex-col md:flex-row items-end gap-6 relative overflow-hidden p-6">
+      <Card className="flex flex-col md:flex-row items-end gap-6 relative overflow-hidden p-6 border-none shadow-none">
         <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full -mr-16 -mt-16 blur-3xl" />
         <div className="flex-1 w-full">
           <Input 
@@ -210,7 +211,7 @@ export const Reports = () => {
         <div className="flex items-end gap-2 w-full md:w-auto flex-1">
           <div className="flex-1">
             <Input 
-              label="Ngày ghi nhận" 
+              label="Ngày diễn ra ca học" 
               type="date"
               icon={<Calendar className="w-4 h-4" />}
               value={filter.date} 

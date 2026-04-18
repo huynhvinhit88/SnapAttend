@@ -11,6 +11,7 @@ import { Button } from '../components/ui/Button';
 import { Card } from '../components/ui/Card';
 import { motion, AnimatePresence } from 'framer-motion';
 import { clsx } from 'clsx';
+import { PageHeader } from '../components/ui/PageHeader';
 
 type Category = 'classes' | 'students' | 'teachers' | 'subjects' | 'sections' | 'sessions';
 
@@ -38,6 +39,7 @@ export const DataManagement = () => {
   const [importData, setImportData] = useState<ValidationResult[]>([]);
   const [isProcessing, setIsProcessing] = useState(false);
   const [exportSelection, setExportSelection] = useState<Set<Category>>(new Set());
+  const [isConfirmingDelete, setIsConfirmingDelete] = useState(false);
 
   // Lấy dữ liệu từ DB để validation
   const dbClasses = useLiveQuery(() => db.classes.toArray());
@@ -114,7 +116,7 @@ export const DataManagement = () => {
             }
             result.transformedData = {
               name: name?.toString(),
-              grade: (row['Khối'] || row['grade'])?.toString(),
+              grade: (row['Khối'] || row['grade'])?.toString() || 'Khối 10',
               major: (row['Chuyên ngành'] || row['major'])?.toString(),
               academicYear: (row['Niên khóa'] || row['academicYear'])?.toString(),
               createdAt: Date.now()
@@ -146,7 +148,6 @@ export const DataManagement = () => {
                   email: (row['Email'] || row['email'])?.toString(),
                   createdAt: Date.now()
                 };
-                // Kiểm tra trùng mã
                 if (dbStudents?.some(s => s.studentCode === code)) {
                   result.status = 'warning';
                   result.warnings.push('Mã học sinh đã tồn tại - Sẽ cập nhật');
@@ -227,11 +228,9 @@ export const DataManagement = () => {
                   schoolYear: (row['Năm học'] || row['schoolYear'])?.toString() || '2024-2025',
                   createdAt: Date.now()
                 };
-                if (!dbSections?.some(s => s.name === name)) {
-                  result.warnings.push('Sẽ tạo lớp học phần mới');
-                } else {
+                if (dbSections?.some(s => s.name === name)) {
                   result.status = 'warning';
-                  result.warnings.push('Lớp học phần đã tồn tại - Sẽ cập nhật');
+                  result.warnings.push('Lớp HP đã tồn tại - Sẽ cập nhật');
                 }
               }
             }
@@ -286,7 +285,6 @@ export const DataManagement = () => {
         const table = db[selectedCategory as keyof typeof db] as any;
         
         for (const data of validData) {
-          // Xử lý cập nhật nếu trùng mã
           let existing;
           if (selectedCategory === 'students') existing = await table.where('studentCode').equals(data.studentCode).first();
           else if (selectedCategory === 'teachers') existing = await table.where('teacherCode').equals(data.teacherCode).first();
@@ -301,7 +299,7 @@ export const DataManagement = () => {
         }
       });
 
-      alert(`Đã import thành công ${validData.length} dòng dữ liệu!`);
+      alert(`Đã nhập thành công ${validData.length} dòng dữ liệu!`);
       setImportData([]);
     } catch (error) {
       console.error('Lỗi import:', error);
@@ -331,56 +329,32 @@ export const DataManagement = () => {
         const headers = CATEGORY_HEADERS[category];
         let rows = [];
 
-        // Chuyển đổi dữ liệu thành dạng mảng hàng để kiểm soát cột
         switch (category) {
-          case 'classes':
-            rows = data.map((d: any) => [d.name, d.grade, d.major || '', d.academicYear]);
-            break;
+          case 'classes': rows = data.map((d: any) => [d.name, d.grade, d.major || '', d.academicYear]); break;
           case 'students':
             rows = data.map((d: any) => [
-              d.studentCode,
-              d.name,
-              dbClasses?.find(c => c.id === d.classId)?.name || 'N/A',
-              d.email || ''
+              d.studentCode, d.name, dbClasses?.find(c => c.id === d.classId)?.name || 'N/A', d.email || ''
             ]);
             break;
-          case 'teachers':
-            rows = data.map((d: any) => [d.teacherCode, d.name, d.department || '']);
-            break;
-          case 'subjects':
-            rows = data.map((d: any) => [d.code, d.name, d.credits]);
-            break;
+          case 'teachers': rows = data.map((d: any) => [d.teacherCode, d.name, d.department || '']); break;
+          case 'subjects': rows = data.map((d: any) => [d.code, d.name, d.credits]); break;
           case 'sections':
             rows = data.map((d: any) => [
-              d.name,
-              dbSubjects?.find(s => s.id === d.subjectId)?.name || 'N/A',
-              dbTeachers?.find(t => t.id === d.teacherId)?.name || 'N/A',
-              d.semester,
-              d.schoolYear
+              d.name, dbSubjects?.find(s => s.id === d.subjectId)?.name || 'N/A', dbTeachers?.find(t => t.id === d.teacherId)?.name || 'N/A', d.semester, d.schoolYear
             ]);
             break;
           case 'sessions':
             rows = data.map((d: any) => [
-              dbSections?.find(s => s.id === d.sectionId)?.name || 'N/A',
-              d.date,
-              d.startTime,
-              d.endTime
+              dbSections?.find(s => s.id === d.sectionId)?.name || 'N/A', d.date, d.startTime, d.endTime
             ]);
             break;
         }
 
-        // Tạo worksheet từ mảng: [Tiêu đề, ...Dữ liệu]
         const ws = XLSX.utils.aoa_to_sheet([headers, ...rows]);
-
-        // ÉP BUỘC GIỚI HẠN VÙNG DỮ LIỆU (Manual Range)
-        // Điều này đảm bảo không có cột trống nào (như cột E) bị lọt vào vùng dữ liệu của tệp
-        const range = {
-          s: { c: 0, r: 0 },
-          e: { c: headers.length - 1, r: rows.length }
-        };
+        const range = { s: { c: 0, r: 0 }, e: { c: headers.length - 1, r: rows.length } };
         ws['!ref'] = XLSX.utils.encode_range(range);
 
-        XLSX.utils.book_append_sheet(wb, ws, CATEGORIES.find(c => c.id === category)?.label || 'Data');
+        XLSX.utils.book_append_sheet(wb, ws, CATEGORIES.find(c => c.id === category)?.label || 'Dữ liệu');
       }
 
       XLSX.writeFile(wb, `SnapAttend_Export_${new Date().toISOString().split('T')[0]}.xlsx`);
@@ -392,14 +366,34 @@ export const DataManagement = () => {
     }
   };
 
-  const toggleExportSelection = (cat: Category) => {
-    const newSelection = new Set(exportSelection);
-    if (newSelection.has(cat)) newSelection.delete(cat);
-    else newSelection.add(cat);
-    setExportSelection(newSelection);
+  const handleDeleteAll = async () => {
+    setIsProcessing(true);
+    try {
+      await db.transaction('rw', [
+        db.classes, db.students, db.teachers, db.subjects, 
+        db.sections, db.enrollments, db.sessions, db.attendance
+      ], async () => {
+        await Promise.all([
+          db.classes.clear(),
+          db.students.clear(),
+          db.teachers.clear(),
+          db.subjects.clear(),
+          db.sections.clear(),
+          db.enrollments.clear(),
+          db.sessions.clear(),
+          db.attendance.clear()
+        ]);
+      });
+      alert('Đã xóa toàn bộ dữ liệu thành công!');
+      setIsConfirmingDelete(false);
+    } catch (error) {
+      console.error('Lỗi khi xóa dữ liệu:', error);
+      alert('Không thể xóa dữ liệu. Vui lòng thử lại!');
+    } finally {
+      setIsProcessing(false);
+    }
   };
 
-  // Tính toán số lượng import
   const stats = useMemo(() => {
     return {
       total: importData.length,
@@ -411,62 +405,57 @@ export const DataManagement = () => {
 
   return (
     <div className="space-y-8 pb-20">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-bold text-foreground mb-2">Quản lý Dữ liệu</h1>
-          <p className="text-foreground/50">Đưa dữ liệu vào hệ thống hoặc sao lưu ra tệp Excel.</p>
-        </div>
-      </div>
+      <PageHeader
+        title="Quản lý Dữ liệu"
+        description="Đưa dữ liệu vào hệ thống hoặc sao lưu ra tệp Excel để đảm bảo an toàn thông tin."
+        icon={<Database className="w-8 h-8" />}
+        breadcrumbs={[
+          { label: 'Trang chủ' },
+          { label: 'Hệ thống', active: true }
+        ]}
+      />
 
       <div className="flex gap-2 p-1 bg-foreground/5 rounded-2xl w-fit">
         <button 
           onClick={() => setActiveTab('import')}
           className={clsx(
-            "flex items-center gap-2 px-6 py-2.5 rounded-xl transition-all font-bold text-sm",
+            "flex items-center gap-2 px-6 py-2.5 rounded-xl transition-all font-black text-xs uppercase tracking-widest",
             activeTab === 'import' ? "bg-primary text-foreground shadow-lg shadow-primary/20" : "text-foreground/40 hover:text-foreground"
           )}
         >
-          <FileUp className="w-4 h-4" />
-          Import Dữ liệu
+          <FileUp className="w-4 h-4" /> Import Excel
         </button>
         <button 
           onClick={() => setActiveTab('export')}
           className={clsx(
-            "flex items-center gap-2 px-6 py-2.5 rounded-xl transition-all font-bold text-sm",
+            "flex items-center gap-2 px-6 py-2.5 rounded-xl transition-all font-black text-xs uppercase tracking-widest",
             activeTab === 'export' ? "bg-primary text-foreground shadow-lg shadow-primary/20" : "text-foreground/40 hover:text-foreground"
           )}
         >
-          <FileDown className="w-4 h-4" />
-          Export Dữ liệu
+          <FileDown className="w-4 h-4" /> Export Excel
         </button>
       </div>
 
       <AnimatePresence mode="wait">
         {activeTab === 'import' ? (
-          <motion.div 
-            key="import" 
-            initial={{ opacity: 0, y: 20 }} 
-            animate={{ opacity: 1, y: 0 }} 
-            exit={{ opacity: 0, y: -20 }}
-            className="space-y-6"
-          >
-            <Card className="p-8">
-              <div className="flex flex-col md:flex-row gap-8">
-                <div className="w-full md:w-1/3 space-y-4">
-                  <h3 className="text-foreground font-bold flex items-center gap-2">
-                    <Info className="w-4 h-4 text-primary" />
-                    Bước 1: Chọn danh mục
+          <motion.div key="import" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} className="space-y-6">
+            <Card className="p-8 bg-background-light/50 backdrop-blur-3xl border-foreground/5">
+              <div className="flex flex-col md:flex-row gap-12">
+                <div className="w-full md:w-1/3 space-y-6">
+                  <h3 className="text-foreground font-black text-sm uppercase tracking-widest flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-lg bg-primary/20 flex items-center justify-center text-primary">1</div>
+                    Chọn danh mục
                   </h3>
-                  <div className="grid grid-cols-1 gap-2">
+                  <div className="grid grid-cols-1 gap-2.5">
                     {CATEGORIES.map(cat => (
                       <button
                         key={cat.id}
                         onClick={() => { setSelectedCategory(cat.id); setImportData([]); }}
                         className={clsx(
-                          "w-full flex items-center justify-between p-3 rounded-xl border transition-all text-sm",
+                          "w-full flex items-center justify-between p-4 rounded-2xl border transition-all text-sm font-bold",
                           selectedCategory === cat.id 
-                            ? "bg-primary/10 border-primary text-primary" 
-                            : "bg-foreground/5 border-foreground/5 text-foreground/50 hover:bg-foreground/10"
+                            ? "bg-primary/10 border-primary/50 text-primary shadow-lg shadow-primary/5" 
+                            : "bg-foreground/5 border-transparent text-foreground/40 hover:bg-foreground/10 hover:text-foreground/60"
                         )}
                       >
                         {cat.label}
@@ -476,24 +465,26 @@ export const DataManagement = () => {
                   </div>
                 </div>
 
-                <div className="w-full md:w-2/3 space-y-4">
-                  <h3 className="text-foreground font-bold flex items-center gap-2">
-                    <Upload className="w-4 h-4 text-primary" />
-                    Bước 2: Tải tệp lên
+                <div className="w-full md:w-2/3 space-y-6">
+                  <h3 className="text-foreground font-black text-sm uppercase tracking-widest flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-lg bg-primary/20 flex items-center justify-center text-primary">2</div>
+                    Tải tệp nguồn
                   </h3>
                   <label 
-                    onDragOver={handleDragOver}
-                    onDrop={handleDrop}
-                    className="flex flex-col items-center justify-center w-full h-64 border-2 border-dashed border-foreground/10 rounded-3xl cursor-pointer hover:bg-foreground/5 hover:border-primary/50 transition-all group"
+                    onDragOver={handleDragOver} onDrop={handleDrop}
+                    className="flex flex-col items-center justify-center w-full h-80 border-2 border-dashed border-foreground/10 rounded-[2.5rem] cursor-pointer hover:bg-primary/5 hover:border-primary/30 transition-all group overflow-hidden relative"
                   >
-                    <div className="flex flex-col items-center justify-center pt-5 pb-6">
-                      <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-                        <FileUp className="w-8 h-8 text-primary" />
+                    <div className="flex flex-col items-center justify-center pt-5 pb-6 relative z-10">
+                      <div className="w-20 h-20 rounded-3xl bg-primary/10 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-500 shadow-inner">
+                        <FileUp className="w-10 h-10 text-primary" />
                       </div>
-                      <p className="mb-2 text-sm text-foreground font-medium">Nhấn để tải hoặc kéo thả file Excel vào đây</p>
-                      <p className="text-xs text-foreground/30 italic">Hỗ trợ .xlsx, .xls</p>
+                      <p className="mb-2 text-lg text-foreground font-black tracking-tight">Kéo thả hoặc Nhấn để chọn tệp</p>
+                      <p className="text-xs text-foreground/30 font-bold uppercase tracking-widest">Hỗ trợ .XLSX, .XLS</p>
                     </div>
                     <input type="file" className="hidden" accept=".xlsx, .xls" onChange={handleFileSelect} disabled={isProcessing} />
+                    
+                    {/* Decorative gradient */}
+                    <div className="absolute inset-x-0 bottom-0 h-1 bg-gradient-to-r from-transparent via-primary/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
                   </label>
                 </div>
               </div>
@@ -501,59 +492,43 @@ export const DataManagement = () => {
 
             {importData.length > 0 && (
               <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <h3 className="text-xl font-bold text-foreground flex items-center gap-2">
-                    Xem trước dữ liệu ({selectedCategory})
+                <div className="flex items-center justify-between bg-foreground/5 p-4 rounded-3xl border border-foreground/5">
+                  <h3 className="text-sm font-black text-foreground uppercase tracking-widest ml-2">
+                    Bản xem trước: {CATEGORIES.find(c => c.id === selectedCategory)?.label}
                   </h3>
                   <div className="flex gap-2">
-                    <Button variant="secondary" onClick={() => setImportData([])}>
-                      <Trash2 className="w-4 h-4" />
-                      Hủy bỏ
+                    <Button variant="ghost" className="text-xs font-black uppercase text-red-500 hover:bg-red-500/10" onClick={() => setImportData([])}>
+                      <Trash2 className="w-4 h-4 mr-2" /> Hủy
                     </Button>
-                    <Button onClick={handleImport} disabled={isProcessing || stats.ok + stats.warning === 0}>
-                      <CheckCircle2 className="w-4 h-4" />
-                      Xác nhận Import
+                    <Button className="text-xs font-black uppercase shadow-lg shadow-primary/20" onClick={handleImport} disabled={isProcessing || stats.ok + stats.warning === 0}>
+                      <CheckCircle2 className="w-4 h-4 mr-2" /> Xác nhận nhập
                     </Button>
                   </div>
                 </div>
 
-                <div className="glass-card overflow-hidden rounded-3xl border border-foreground/10">
+                <div className="glass-card overflow-hidden rounded-[2.5rem] border border-foreground/10 shadow-2xl">
                   <div className="max-h-[600px] overflow-auto custom-scrollbar">
                     <table className="w-full text-left border-collapse">
-                      <thead className="sticky top-0 bg-background-light z-10 shadow-lg">
-                        <tr className="border-b border-foreground/10">
-                          <th className="p-4 text-[10px] font-bold text-foreground/40 uppercase tracking-widest pl-6">Trạng thái</th>
+                      <thead className="sticky top-0 bg-background-light/95 backdrop-blur-md z-10">
+                        <tr className="border-b border-foreground/5">
+                          <th className="p-5 text-[10px] font-black text-foreground/40 uppercase tracking-widest pl-8">Trạng thái</th>
                           {Object.keys(importData[0].row).map(key => (
-                            <th key={key} className="p-4 text-[10px] font-bold text-foreground/40 uppercase tracking-widest">{key}</th>
+                            <th key={key} className="p-5 text-[10px] font-black text-foreground/40 uppercase tracking-widest">{key}</th>
                           ))}
                         </tr>
                       </thead>
                       <tbody>
                         {importData.map((res, idx) => (
-                          <tr key={idx} className="border-b border-foreground/5 hover:bg-foreground/5 transition-colors group">
-                            <td className="p-4 pl-6">
-                              {res.status === 'ok' && <CheckCircle2 className="w-5 h-5 text-green-500" />}
-                              {res.status === 'warning' && (
-                                <div className="relative">
-                                  <AlertTriangle className="w-5 h-5 text-yellow-500" />
-                                  <div className="absolute left-full ml-2 top-0 hidden group-hover:block bg-yellow-500 text-black text-[10px] px-2 py-1 rounded whitespace-nowrap z-20">
-                                    {res.warnings.join(', ')}
-                                  </div>
-                                </div>
-                              )}
-                              {res.status === 'error' && (
-                                <div className="relative">
-                                  <XCircle className="w-5 h-5 text-red-500" />
-                                  <div className="absolute left-full ml-2 top-0 hidden group-hover:block bg-red-500 text-foreground text-[10px] px-2 py-1 rounded whitespace-nowrap z-20">
-                                    {res.errors.join(', ')}
-                                  </div>
-                                </div>
-                              )}
+                          <tr key={idx} className="border-b border-foreground/5 hover:bg-primary/5 transition-colors group">
+                            <td className="p-5 pl-8">
+                              {res.status === 'ok' && <CheckCircle2 className="w-5 h-5 text-green-500 shadow-sm" />}
+                              {res.status === 'warning' && <AlertTriangle className="w-5 h-5 text-yellow-500 shadow-sm" />}
+                              {res.status === 'error' && <XCircle className="w-5 h-5 text-red-500 shadow-sm" />}
                             </td>
                             {Object.entries(res.row).map(([key, value], vIdx) => (
                               <td key={vIdx} className={clsx(
-                                "p-4 text-sm transition-colors",
-                                res.invalidFields.includes(key) ? "text-red-500 font-bold bg-red-500/5" : "text-foreground/70"
+                                "p-5 text-sm transition-all",
+                                res.invalidFields.includes(key) ? "text-red-500 font-black bg-red-500/5" : "text-foreground/70"
                               )}>
                                 {value?.toString()}
                               </td>
@@ -564,24 +539,12 @@ export const DataManagement = () => {
                     </table>
                   </div>
 
-                  <div className="p-4 bg-foreground/5 flex items-center justify-between border-t border-foreground/10">
-                    <div className="flex gap-6">
-                      <div className="flex items-center gap-2">
-                        <div className="w-2 h-2 rounded-full bg-foreground/30" />
-                        <span className="text-xs text-foreground/40 uppercase font-bold tracking-widest">Tổng: {stats.total}</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <div className="w-2 h-2 rounded-full bg-green-500" />
-                        <span className="text-xs text-green-500 uppercase font-bold tracking-widest">Hợp lệ: {stats.ok}</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <div className="w-2 h-2 rounded-full bg-yellow-500" />
-                        <span className="text-xs text-yellow-500 uppercase font-bold tracking-widest">Cảnh báo: {stats.warning}</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <div className="w-2 h-2 rounded-full bg-red-500" />
-                        <span className="text-xs text-red-500 uppercase font-bold tracking-widest">Lỗi: {stats.error}</span>
-                      </div>
+                  <div className="p-6 bg-background-light/50 flex items-center justify-between border-t border-foreground/5">
+                    <div className="flex gap-8">
+                      <StatItem color="bg-primary/50" label="Tổng" count={stats.total} />
+                      <StatItem color="bg-green-500" label="Hợp lệ" count={stats.ok} />
+                      <StatItem color="bg-yellow-500" label="Cảnh báo" count={stats.warning} />
+                      <StatItem color="bg-red-500" label="Lỗi" count={stats.error} />
                     </div>
                   </div>
                 </div>
@@ -589,55 +552,55 @@ export const DataManagement = () => {
             )}
           </motion.div>
         ) : (
-          <motion.div 
-            key="export" 
-            initial={{ opacity: 0, y: 20 }} 
-            animate={{ opacity: 1, y: 0 }} 
-            exit={{ opacity: 0, y: -20 }}
-            className="space-y-6"
-          >
-            <Card className="p-8">
-              <div className="space-y-6">
-                <div className="flex items-center justify-between">
-                  <h3 className="text-xl font-bold text-foreground flex items-center gap-2">
-                    <Download className="w-5 h-5 text-primary" />
-                    Chọn danh mục cần xuất
+          <motion.div key="export" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} className="space-y-6">
+            <Card className="p-8 bg-background-light/50 backdrop-blur-3xl border-foreground/5">
+              <div className="space-y-8">
+                <div className="flex items-center justify-between px-2">
+                  <h3 className="text-lg font-black text-foreground tracking-tight flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-primary/20 flex items-center justify-center text-primary shadow-inner">
+                      <FileDown className="w-5 h-5" />
+                    </div>
+                    Chọn dữ liệu cần sao lưu
                   </h3>
-                  <div className="flex gap-2">
-                    <Button variant="ghost" onClick={() => setExportSelection(new Set())}>Bỏ chọn tất cả</Button>
-                    <Button variant="ghost" onClick={() => setExportSelection(new Set(CATEGORIES.map(c => c.id)))}>Chọn tất cả</Button>
+                  <div className="flex gap-3">
+                    <Button variant="ghost" className="text-[10px] font-black uppercase tracking-widest text-foreground/40 hover:text-foreground" onClick={() => setExportSelection(new Set())}>Bỏ chọn tất cả</Button>
+                    <Button variant="ghost" className="text-[10px] font-black uppercase tracking-widest text-primary hover:bg-primary/10" onClick={() => setExportSelection(new Set(CATEGORIES.map(c => c.id)))}>Chọn toàn bộ</Button>
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
                   {CATEGORIES.map(cat => (
                     <button
-                      key={cat.id}
-                      onClick={() => toggleExportSelection(cat.id)}
+                      key={cat.id} onClick={() => {
+                        const newSet = new Set(exportSelection);
+                        if (newSet.has(cat.id)) newSet.delete(cat.id);
+                        else newSet.add(cat.id);
+                        setExportSelection(newSet);
+                      }}
                       className={clsx(
-                        "flex items-center justify-between p-6 rounded-3xl border transition-all group relative overflow-hidden",
+                        "flex items-center justify-between p-6 rounded-[2rem] border transition-all group relative overflow-hidden",
                         exportSelection.has(cat.id) 
-                          ? "bg-primary/10 border-primary shadow-lg shadow-primary/10" 
-                          : "bg-foreground/5 border-foreground/5 hover:border-foreground/10"
+                          ? "bg-primary/10 border-primary/50 shadow-xl shadow-primary/5" 
+                          : "bg-background-light/50 border-foreground/5 hover:border-foreground/10"
                       )}
                     >
-                      <div className="flex items-center gap-4">
+                      <div className="flex items-center gap-5 relative z-10">
                         <div className={clsx(
-                          "w-12 h-12 rounded-2xl flex items-center justify-center transition-colors",
-                          exportSelection.has(cat.id) ? "bg-primary text-foreground" : "bg-foreground/5 text-foreground/30 group-hover:bg-foreground/10"
+                          "w-14 h-14 rounded-2xl flex items-center justify-center transition-all duration-500 shadow-inner",
+                          exportSelection.has(cat.id) ? "bg-primary text-foreground scale-110" : "bg-foreground/5 text-foreground/20 group-hover:bg-foreground/10"
                         )}>
-                          <cat.icon className="w-6 h-6" />
+                          <Database className="w-7 h-7" />
                         </div>
                         <div className="text-left">
                           <p className={clsx(
-                            "font-bold transition-colors",
-                            exportSelection.has(cat.id) ? "text-foreground" : "text-foreground/50"
+                            "font-black tracking-tight transition-colors",
+                            exportSelection.has(cat.id) ? "text-foreground" : "text-foreground/40 group-hover:text-foreground/60"
                           )}>{cat.label}</p>
-                          <p className="text-[10px] text-foreground/20 uppercase tracking-widest font-bold">XLSX Format</p>
+                          <p className="text-[9px] font-black text-foreground/20 uppercase tracking-widest">Excel Sheet</p>
                         </div>
                       </div>
                       {exportSelection.has(cat.id) && (
-                        <div className="w-6 h-6 rounded-full bg-primary flex items-center justify-center">
+                        <div className="w-7 h-7 rounded-full bg-primary flex items-center justify-center shadow-lg shadow-primary/20">
                           <Check className="w-4 h-4 text-foreground" />
                         </div>
                       )}
@@ -645,53 +608,97 @@ export const DataManagement = () => {
                   ))}
                 </div>
 
-                <div className="pt-8 border-t border-foreground/10 flex justify-end">
+                <div className="pt-10 border-t border-foreground/5 flex justify-center">
                   <Button 
-                    size="lg" 
-                    className="px-12"
-                    onClick={handleExport}
-                    disabled={isProcessing || exportSelection.size === 0}
+                    size="lg" className="px-16 h-16 rounded-2xl shadow-2xl shadow-primary/20 group relative overflow-hidden"
+                    onClick={handleExport} disabled={isProcessing || exportSelection.size === 0}
                   >
-                    <FileDown className="w-5 h-5 mr-2" />
-                    Bắt đầu Xuất File
+                    <span className="relative z-10 flex items-center gap-3 font-black uppercase text-xs tracking-widest">
+                      <Download className="w-5 h-5" /> Tải về tệp Excel
+                    </span>
+                    <div className="absolute inset-0 bg-white/10 translate-y-full group-hover:translate-y-0 transition-transform" />
                   </Button>
                 </div>
               </div>
             </Card>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="glass-card p-6 border border-primary/10 rounded-3xl">
-                <h4 className="text-foreground font-bold mb-3 flex items-center gap-2">
-                  <Info className="w-4 h-4 text-primary" />
-                  Lưu ý khi xuất tệp
-                </h4>
-                <ul className="space-y-2 text-sm text-foreground/40 list-disc list-inside">
-                  <li>Tệp xuất ra tuân thủ định dạng chuẩn để có thể import ngược lại.</li>
-                  <li>Dữ liệu nhạy cảm (Tên, Mã số) sẽ được tự động giải mã khi xuất.</li>
-                  <li>Mỗi danh mục được chọn sẽ là một "Sheet" riêng trong tệp Excel.</li>
-                </ul>
+            <div className="bg-primary/5 p-6 rounded-[2rem] border border-primary/10 flex items-start gap-4 mx-4">
+              <Info className="w-6 h-6 text-primary flex-shrink-0 mt-1" />
+              <div className="space-y-1">
+                <h4 className="font-black text-sm text-foreground uppercase tracking-tight">An toàn dữ liệu tuyệt đối</h4>
+                <p className="text-xs text-foreground/40 leading-relaxed">
+                  Tất cả các tệp xuất ra đều được chuẩn hóa để có thể nhập ngược lại vào hệ thống bất cứ lúc nào. SnapAttend khuyến nghị bạn nên sao lưu dữ liệu hàng tuần.
+                </p>
               </div>
             </div>
           </motion.div>
         )}
       </AnimatePresence>
 
-      {/* Loading Overlay */}
       <AnimatePresence>
         {isProcessing && (
-          <motion.div 
-            initial={{ opacity: 0 }} 
-            animate={{ opacity: 1 }} 
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-center justify-center"
-          >
-            <div className="text-center space-y-4">
-              <div className="w-16 h-16 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto" />
-              <p className="text-foreground font-bold animate-pulse">Đang xử lý dữ liệu...</p>
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 bg-background/80 backdrop-blur-md z-50 flex items-center justify-center">
+            <div className="text-center space-y-6">
+              <div className="w-20 h-20 border-4 border-primary/20 border-t-primary rounded-full animate-spin mx-auto shadow-2xl shadow-primary/10" />
+              <div className="space-y-2">
+                <p className="text-xl font-black text-foreground tracking-tight animate-pulse">Đang đồng bộ hóa...</p>
+                <p className="text-xs text-foreground/30 font-bold uppercase tracking-widest">Vui lòng không đóng cửa sổ này</p>
+              </div>
             </div>
           </motion.div>
         )}
       </AnimatePresence>
+
+      <div className="mt-12 pt-12 border-t border-foreground/5">
+        <div className="max-w-xl">
+          <h3 className="text-red-500 font-black text-xs uppercase tracking-[0.2em] mb-4 flex items-center gap-2">
+            <AlertTriangle className="w-4 h-4" /> Vùng nguy hiểm
+          </h3>
+          <Card className="p-6 border-red-500/20 bg-red-500/[0.02] flex flex-col md:flex-row items-center justify-between gap-6">
+            <div className="space-y-1">
+              <p className="font-bold text-foreground">Xóa toàn bộ dữ liệu</p>
+              <p className="text-xs text-foreground/40 leading-relaxed">
+                Thao tác này sẽ dọn dẹp sạch sẽ mọi thông tin trong ứng dụng. Hãy cân nhắc kỹ trước khi thực hiện.
+              </p>
+            </div>
+
+            {!isConfirmingDelete ? (
+              <Button 
+                variant="ghost" 
+                className="text-red-500 hover:bg-red-500/10 text-xs font-black uppercase tracking-widest whitespace-nowrap"
+                onClick={() => setIsConfirmingDelete(true)}
+              >
+                Xóa ngay
+              </Button>
+            ) : (
+              <div className="flex gap-2 animate-in fade-in slide-in-from-right-4 duration-300">
+                <Button 
+                  variant="secondary" 
+                  className="text-[10px] font-black uppercase tracking-widest px-4 h-10"
+                  onClick={() => setIsConfirmingDelete(false)}
+                >
+                  Hủy
+                </Button>
+                <Button 
+                  className="bg-red-500 hover:bg-red-600 text-foreground text-[10px] font-black uppercase tracking-widest px-4 h-10 shadow-lg shadow-red-500/20"
+                  onClick={handleDeleteAll}
+                  disabled={isProcessing}
+                >
+                  Xác nhận xóa
+                </Button>
+              </div>
+            )}
+          </Card>
+        </div>
+      </div>
     </div>
   );
 };
+
+const StatItem = ({ color, label, count }: { color: string; label: string; count: number }) => (
+  <div className="flex items-center gap-2.5">
+    <div className={clsx("w-3 h-3 rounded-full shadow-sm", color)} />
+    <span className="text-[10px] text-foreground/40 uppercase font-black tracking-widest">{label}:</span>
+    <span className="text-sm font-black text-foreground">{count}</span>
+  </div>
+);

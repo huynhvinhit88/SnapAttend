@@ -6,7 +6,7 @@ interface FilterState {
   teachers: { searchTerm: string };
   subjects: { searchTerm: string };
   sections: { searchTerm: string };
-  sessions: { selectedSectionId: string; filterDate: string };
+  sessions: { searchTerm: string; selectedSectionId: string; filterDate: string };
   reports: { date: string; subjectId: string; sectionId: string };
 }
 
@@ -16,7 +16,7 @@ const initialState: FilterState = {
   teachers: { searchTerm: '' },
   subjects: { searchTerm: '' },
   sections: { searchTerm: '' },
-  sessions: { selectedSectionId: 'all', filterDate: '' },
+  sessions: { searchTerm: '', selectedSectionId: 'all', filterDate: '' },
   reports: { date: '', subjectId: 'all', sectionId: 'all' }
 };
 
@@ -41,13 +41,13 @@ export const FilterProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         ...initialState,
         ...parsed,
         // Đảm bảo các object con cũng được gộp (shallow merge cho từng trang)
-        classes: { ...initialState.classes, ...(parsed.classes || {}) },
-        students: { ...initialState.students, ...(parsed.students || {}) },
-        teachers: { ...initialState.teachers, ...(parsed.teachers || {}) },
-        subjects: { ...initialState.subjects, ...(parsed.subjects || {}) },
-        sections: { ...initialState.sections, ...(parsed.sections || {}) },
-        sessions: { ...initialState.sessions, ...(parsed.sessions || {}) },
-        reports: { ...initialState.reports, ...(parsed.reports || {}) },
+        classes: { ...initialState.classes, ...(parsed?.classes || {}) },
+        students: { ...initialState.students, ...(parsed?.students || {}) },
+        teachers: { ...initialState.teachers, ...(parsed?.teachers || {}) },
+        subjects: { ...initialState.subjects, ...(parsed?.subjects || {}) },
+        sections: { ...initialState.sections, ...(parsed?.sections || {}) },
+        sessions: { ...initialState.sessions, ...(parsed?.sessions || {}) },
+        reports: { ...initialState.reports, ...(parsed?.reports || {}) },
       };
     } catch (e) {
       return initialState;

@@ -1,6 +1,9 @@
 import React, { useState } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
-import { Plus, Database, Trash2, Search, UserPlus, Users, Pencil } from 'lucide-react';
+import { 
+  Plus, Database, Trash2, Search, UserPlus, 
+  Users, Pencil, Layers 
+} from 'lucide-react';
 import { db } from '../db/db';
 import { Button } from '../components/ui/Button';
 import { Card } from '../components/ui/Card';
@@ -8,6 +11,8 @@ import { Input } from '../components/ui/Input';
 import { Modal } from '../components/ui/Modal';
 import { motion } from 'framer-motion';
 import { useFilter } from '../context/FilterContext';
+import { PageHeader } from '../components/ui/PageHeader';
+import { BookOpen } from 'lucide-react';
 
 export const Sections = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -33,6 +38,8 @@ export const Sections = () => {
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   const sections = useLiveQuery(() => db.sections.toArray());
+  const sectionCount = useLiveQuery(() => db.sections.count());
+  const subjectCount = useLiveQuery(() => db.subjects.count());
   const subjects = useLiveQuery(() => db.subjects.toArray());
   const teachers = useLiveQuery(() => db.teachers.toArray());
   const students = useLiveQuery(() => db.students.toArray());
@@ -116,7 +123,6 @@ export const Sections = () => {
         createdAt: Date.now()
       });
     }
-    // Form không tự động đóng để người dùng có thể thêm nhiều học sinh liên tục
   };
 
   const handleUnenrollStudent = async (enrollmentId: number) => {
@@ -137,27 +143,36 @@ export const Sections = () => {
   );
 
   return (
-    <div className="space-y-8">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-bold text-foreground mb-2">Lớp học phần</h1>
-          <p className="text-foreground/50">Quản lý nhóm học sinh đăng ký theo từng môn học.</p>
-        </div>
+    <div className="space-y-8 pb-20">
+      <PageHeader
+        title="Lớp học phần"
+        description="Quản lý nhóm học sinh đăng ký theo từng môn học và khóa đào tạo cụ thể."
+        icon={<Layers className="w-8 h-8" />}
+        breadcrumbs={[
+          { label: 'Trang chủ' },
+          { label: 'Đào tạo', active: true }
+        ]}
+        stats={[
+          { label: 'Tổng lớp HP', value: sectionCount || 0, icon: Layers },
+          { label: 'Tổng số môn học', value: subjectCount || 0, icon: BookOpen, color: 'text-primary' },
+        ]}
+      >
         <Button onClick={() => {
           setEditingId(null);
           setFormData({ name: '', subjectId: '', teacherId: '', semester: 'Học kỳ 1', schoolYear: defaultYear });
+          setErrors({});
           setIsModalOpen(true);
         }}>
           <Plus className="w-5 h-5" />
-          Tạo Lớp Học Phần
+          Thêm Lớp HP
         </Button>
-      </div>
+      </PageHeader>
 
-      <div className="relative">
-        <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-foreground/30" />
+      <div className="relative group">
+        <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-foreground/30 group-focus-within:text-primary transition-colors" />
         <Input 
-          className="pl-12" 
-          placeholder="Tìm kiếm lớp học phần..." 
+          className="pl-12 h-14 bg-background-light/50 backdrop-blur-xl border-foreground/10 focus:border-primary/50 shadow-inner" 
+          placeholder="Tìm kiếm theo tên lớp học phần hoặc mã môn..." 
           value={searchTerm} 
           onChange={e => updateFilter('sections', { searchTerm: e.target.value })} 
         />
@@ -168,61 +183,74 @@ export const Sections = () => {
           const subject = subjects?.find(s => s.id === item.subjectId);
           const teacher = teachers?.find(t => t.id === item.teacherId);
           
-          // Chỉ đếm những học sinh thực sự còn tồn tại trong bảng students
           const sectionEnrollments = enrollments?.filter(e => e.sectionId === item.id) || [];
           const studentCount = sectionEnrollments.filter(e => 
             students?.some(s => s.id === e.studentId)
           ).length;
 
           return (
-            <motion.div key={item.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: index * 0.05 }}>
-              <Card className="relative group">
-                <div className="flex justify-between items-start mb-4">
-                  <div className="w-10 h-10 bg-primary/20 rounded-xl flex items-center justify-center">
-                    <Database className="w-5 h-5 text-primary" />
+            <motion.div key={item.id} initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: index * 0.05 }}>
+              <Card className="relative group overflow-hidden hover:border-primary/30 transition-all">
+                <div className="flex justify-between items-start mb-6">
+                  <div className="w-12 h-12 bg-primary/10 rounded-2xl flex items-center justify-center shadow-inner group-hover:scale-110 transition-transform">
+                    <Database className="w-6 h-6 text-primary" />
                   </div>
-                  <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <Button variant="ghost" className="p-2 text-primary hover:bg-primary/10" title="Sửa" onClick={() => handleEditSection(item)}>
-                      <Pencil className="w-5 h-5" />
+                  <div className="flex gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity z-10">
+                    <Button variant="ghost" className="p-2 w-9 h-9 rounded-xl text-primary hover:bg-primary/10" title="Sửa" onClick={() => handleEditSection(item)}>
+                      <Pencil className="w-4.5 h-4.5" />
                     </Button>
-                    <Button variant="ghost" className="p-2 text-primary hover:bg-primary/10" title="Xem danh sách" onClick={() => { setSelectedSectionId(item.id!); setIsViewStudentsModalOpen(true); }}>
-                      <Users className="w-5 h-5" />
+                    <Button variant="ghost" className="p-2 w-9 h-9 rounded-xl text-primary hover:bg-primary/10" title="Xem danh sách" onClick={() => { setSelectedSectionId(item.id!); setIsViewStudentsModalOpen(true); }}>
+                      <Users className="w-4.5 h-4.5" />
                     </Button>
-                    <Button variant="ghost" className="p-2 text-primary hover:bg-primary/10" title="Ghi danh" onClick={() => { setSelectedSectionId(item.id!); setIsMapModalOpen(true); }}>
-                      <UserPlus className="w-5 h-5" />
+                    <Button variant="ghost" className="p-2 w-9 h-9 rounded-xl text-primary hover:bg-primary/10" title="Ghi danh" onClick={() => { setSelectedSectionId(item.id!); setIsMapModalOpen(true); }}>
+                      <UserPlus className="w-4.5 h-4.5" />
                     </Button>
-                    <Button variant="ghost" className="p-2 text-red-500 hover:bg-red-500/10" title="Xóa" onClick={() => handleDeleteSection(item.id!)}>
-                      <Trash2 className="w-5 h-5" />
+                    <Button variant="ghost" className="p-2 w-9 h-9 rounded-xl text-red-500 hover:bg-red-500/10" title="Xóa" onClick={() => handleDeleteSection(item.id!)}>
+                      <Trash2 className="w-4.5 h-4.5" />
                     </Button>
                   </div>
                 </div>
 
-                <h3 className="text-xl font-bold text-foreground mb-1">{item.name}</h3>
-                <p className="text-foreground/60 text-sm mb-4">{subject?.name} • {teacher?.name}</p>
+                <h3 className="text-xl font-black text-foreground mb-1 mt-2">{item.name}</h3>
+                <p className="text-primary text-xs font-bold uppercase tracking-widest flex items-center gap-1.5">
+                  {subject?.name} <span className="text-foreground/20">•</span> {teacher?.name}
+                </p>
 
-                <div className="flex items-center justify-between pt-4 border-t border-foreground/10">
-                  <div className="flex items-center gap-2 text-foreground/40 text-xs font-bold uppercase tracking-wider">
-                    <Users className="w-4 h-4" />
-                    {studentCount} Học sinh
+                <div className="mt-8 pt-6 border-t border-foreground/5 flex items-center justify-between">
+                  <div className="flex items-center gap-2 bg-foreground/5 px-3 py-1.5 rounded-xl border border-foreground/5">
+                    <Users className="w-4 h-4 text-foreground/40" />
+                    <span className="text-xs font-black text-foreground/60 tracking-tight">{studentCount} Học sinh</span>
                   </div>
-                  <div className="flex flex-col items-end">
-                    <span className="text-xs text-foreground/30">{item.semester}</span>
-                    <span className="text-[10px] text-foreground/20 font-bold">{item.schoolYear}</span>
+                  <div className="text-right">
+                    <p className="text-[10px] text-foreground/30 font-black uppercase tracking-widest">{item.semester}</p>
+                    <p className="text-[10px] text-primary font-bold">{item.schoolYear}</p>
                   </div>
                 </div>
+                
+                <div className="absolute -bottom-10 -right-10 w-32 h-32 bg-primary/5 rounded-full blur-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-700" />
               </Card>
             </motion.div>
           );
         })}
       </div>
 
+      {filteredSections?.length === 0 && (
+        <div className="text-center py-24 px-4 bg-background-light/30 backdrop-blur-3xl rounded-[3rem] border border-dashed border-foreground/10">
+          <Layers className="w-20 h-20 text-foreground/5 mx-auto mb-6" />
+          <p className="text-foreground/40 font-bold text-lg">Hệ thống chưa ghi nhận lớp học phần nào.</p>
+          <Button variant="ghost" className="mt-4 text-primary hover:bg-primary/5" onClick={() => setIsModalOpen(true)}>
+            <Plus className="w-4 h-4 mr-2" /> Tạo Lớp Bây Giờ
+          </Button>
+        </div>
+      )}
+
       {/* Modal Tạo/Sửa Lớp Học Phần */}
       <Modal 
         isOpen={isModalOpen} 
         onClose={() => setIsModalOpen(false)} 
-        title={editingId ? "Sửa Lớp Học Phần" : "Tạo Lớp Học Phần"}
+        title={editingId ? "Cập nhật Lớp Học Phần" : "Thiết lập Lớp Học Phần Mới"}
       >
-        <form noValidate onSubmit={handleAddSection} className="space-y-4">
+        <form noValidate onSubmit={handleAddSection} className="space-y-6 pt-4">
           <Input 
             label="Tên gợi nhớ (VD: Toán 10A1 - Thầy Nam)" 
             value={formData.name} 
@@ -233,7 +261,7 @@ export const Sections = () => {
             }} 
           />
           <Input 
-            label="Môn học" type="select" 
+            label="Môn học giảng dạy" type="select" 
             error={errors.subjectId}
             options={[{ value: '', label: 'Chọn môn học...' }, ...(subjects?.map(s => ({ value: s.id!.toString(), label: s.name })) || [])]}
             value={formData.subjectId} 
@@ -256,35 +284,37 @@ export const Sections = () => {
             <Input label="Học kỳ" value={formData.semester} onChange={e => setFormData({...formData, semester: e.target.value})} />
             <Input label="Năm học" value={formData.schoolYear} onChange={e => setFormData({...formData, schoolYear: e.target.value})} />
           </div>
-          <div className="flex gap-3 pt-4">
-            <Button type="button" variant="secondary" className="flex-1" onClick={() => setIsModalOpen(false)}>Hủy</Button>
-            <Button type="submit" className="flex-1">
-              {editingId ? "Cập Nhật" : "Tạo Lớp"}
+          <div className="flex gap-4 pt-6">
+            <Button type="button" variant="secondary" className="flex-1 h-12 rounded-2xl" onClick={() => setIsModalOpen(false)}>Hủy</Button>
+            <Button type="submit" className="flex-1 h-12 rounded-2xl shadow-lg shadow-primary/20">
+              {editingId ? "Cập Nhật" : "Hoàn Tất Tạo Lớp"}
             </Button>
           </div>
         </form>
       </Modal>
 
-      {/* Modal Mapping Học Sinh */}
+      {/* Modal Ghi Danh Học Sinh (Mapping) */}
       <Modal 
         isOpen={isMapModalOpen} 
         onClose={() => { setIsMapModalOpen(false); setClassSearchTerm(''); }} 
-        title="Ghi danh học sinh"
+        title="Ghi danh học viên"
       >
-        <div className="space-y-6">
-          <p className="text-foreground/60 text-sm italic border-l-2 border-primary pl-3">Chọn học sinh tham gia lớp học phần này. Bạn có thể chọn nhanh theo lớp hành chính.</p>
+        <div className="space-y-6 pt-2">
+          <p className="text-foreground/50 text-xs font-medium leading-relaxed border-l-2 border-primary pl-4 py-1 bg-primary/5 rounded-r-lg">
+            Bạn có thể ghi danh lẻ từng học viên hoặc chọn 'Ghi danh cả lớp' để thêm nhanh toàn bộ sỹ số từ các lớp hành chính.
+          </p>
           
-          <div className="relative">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-foreground/30" />
+          <div className="relative group">
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-foreground/30 group-focus-within:text-primary transition-colors" />
             <Input 
-              className="pl-10 h-10 text-sm" 
+              className="pl-10 h-11 bg-background-light border-foreground/10 shadow-inner text-sm" 
               placeholder="Tìm kiếm lớp hành chính..." 
               value={classSearchTerm}
               onChange={e => setClassSearchTerm(e.target.value)}
             />
           </div>
 
-          <div className="max-h-[400px] overflow-auto space-y-4 pr-2 custom-scrollbar">
+          <div className="max-h-[450px] overflow-auto space-y-6 pr-2 custom-scrollbar">
             {classes?.filter(cls => 
               cls.name.toLowerCase().includes(classSearchTerm.toLowerCase())
             ).map(cls => {
@@ -292,26 +322,31 @@ export const Sections = () => {
               if (classStudents.length === 0) return null;
               
               return (
-                <div key={cls.id} className="space-y-2">
-                  <div className="flex items-center justify-between sticky top-0 bg-background-light py-2 border-b border-foreground/5 z-10">
-                    <span className="text-sm font-bold text-primary uppercase tracking-wider">{cls.name}</span>
+                <div key={cls.id} className="space-y-3">
+                  <div className="flex items-center justify-between sticky top-0 bg-background-light/95 backdrop-blur-md py-2.5 px-3 rounded-xl border border-foreground/5 z-10 shadow-sm">
+                    <span className="text-xs font-black text-primary uppercase tracking-widest">{cls.name}</span>
                     <Button 
-                      variant="ghost" className="text-xs h-8 hover:bg-primary/10"
+                      variant="ghost" className="text-[10px] h-7 font-black uppercase tracking-widest px-3 hover:bg-primary/10 rounded-lg"
                       onClick={() => handleMapStudents(classStudents.map(s => s.id!))}
                     >
                       Ghi danh cả lớp
                     </Button>
                   </div>
-                  <div className="grid grid-cols-1 gap-1">
+                  <div className="grid grid-cols-1 gap-2 pl-2">
                     {classStudents.map(s => {
                       const isEnrolled = enrollments?.some(e => e.sectionId === selectedSectionId && e.studentId === s.id);
                       return (
-                        <div key={s.id} className="flex items-center justify-between p-3 rounded-xl bg-foreground/5 border border-foreground/5 hover:border-foreground/10 transition-colors">
-                          <span className="text-foreground/80">{s.name} <span className="text-xs text-foreground/30 ml-2">({s.studentCode})</span></span>
+                        <div key={s.id} className="flex items-center justify-between p-3 rounded-2xl bg-foreground/5 border border-transparent hover:border-foreground/10 transition-all group/std">
+                          <span className="text-sm font-bold text-foreground/80 group-hover/std:text-foreground">
+                            {s.name} <span className="text-[10px] text-foreground/30 ml-2 font-black">#{s.studentCode}</span>
+                          </span>
                           {isEnrolled ? (
-                            <span className="text-[10px] text-green-500 font-bold uppercase tracking-wider bg-green-500/10 px-2 py-1 rounded-full">Đã ghi danh</span>
+                            <div className="flex items-center gap-1.5 px-2 py-0.5 bg-green-500/10 rounded-full">
+                              <div className="w-1 h-1 rounded-full bg-green-500" />
+                              <span className="text-[10px] text-green-500 font-black uppercase tracking-widest">Ghi danh xong</span>
+                            </div>
                           ) : (
-                            <Button variant="ghost" className="h-8 text-xs text-primary" onClick={() => handleMapStudents([s.id!])}>+ Thêm</Button>
+                            <Button variant="ghost" className="h-8 text-[10px] font-black uppercase tracking-widest text-primary hover:bg-primary/10 px-3 rounded-lg" onClick={() => handleMapStudents([s.id!])}>+ Thêm</Button>
                           )}
                         </div>
                       );
@@ -321,43 +356,36 @@ export const Sections = () => {
               );
             })}
 
-            {/* Hiển thị học sinh mồ côi (không thuộc lớp nào hoặc lớp đã bị xóa) */}
+            {/* Nhóm học sinh tự do */}
             {(() => {
               const classIds = classes?.map(c => c.id) || [];
               const unassignedStudents = students?.filter(s => !s.classId || !classIds.includes(s.classId)) || [];
-              const unassignedTitle = "Chưa xác định lớp";
+              const unassignedTitle = "Học viên tự do";
               
               if (unassignedStudents.length === 0) return null;
-              
-              // Chỉ hiển thị nhóm này nếu không tìm kiếm hoặc tên nhóm khớp với từ khóa
-              if (classSearchTerm && !unassignedTitle.toLowerCase().includes(classSearchTerm.toLowerCase())) {
-                return null;
-              }
+              if (classSearchTerm && !unassignedTitle.toLowerCase().includes(classSearchTerm.toLowerCase())) return null;
 
               return (
-                <div className="space-y-2 pt-4">
-                  <div className="flex items-center justify-between sticky top-0 bg-background-light py-2 border-b border-foreground/5 z-10">
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm font-bold text-yellow-500 uppercase tracking-wider">{unassignedTitle}</span>
-                      <span className="text-[10px] bg-yellow-500/10 text-yellow-500 px-2 py-0.5 rounded-full font-bold">Lưu ý</span>
-                    </div>
+                <div className="space-y-3 pt-2">
+                  <div className="flex items-center justify-between sticky top-0 bg-background-light/95 backdrop-blur-md py-2.5 px-3 rounded-xl border border-yellow-500/10 z-10 shadow-sm">
+                    <span className="text-xs font-black text-yellow-500 uppercase tracking-widest">{unassignedTitle}</span>
                     <Button 
-                      variant="ghost" className="text-xs h-8 hover:bg-yellow-500/10 text-yellow-500"
+                      variant="ghost" className="text-[10px] h-7 font-black uppercase tracking-widest px-3 hover:bg-yellow-500/10 text-yellow-500 rounded-lg"
                       onClick={() => handleMapStudents(unassignedStudents.map(s => s.id!))}
                     >
-                      Ghi danh cả nhóm
+                      Thêm tất cả
                     </Button>
                   </div>
-                  <div className="grid grid-cols-1 gap-1">
+                  <div className="grid grid-cols-1 gap-2 pl-2">
                     {unassignedStudents.map(s => {
                       const isEnrolled = enrollments?.some(e => e.sectionId === selectedSectionId && e.studentId === s.id);
                       return (
-                        <div key={s.id} className="flex items-center justify-between p-3 rounded-xl bg-foreground/5 border border-dashed border-foreground/10 hover:border-foreground/20 transition-colors">
-                          <span className="text-foreground/80">{s.name} <span className="text-xs text-foreground/30 ml-2">({s.studentCode})</span></span>
+                        <div key={s.id} className="flex items-center justify-between p-3 rounded-2xl bg-yellow-500/5 border border-dashed border-yellow-500/10 hover:border-yellow-500/30 transition-all">
+                          <span className="text-sm font-bold text-foreground/80">{s.name} <span className="text-[10px] text-foreground/30 ml-2 font-black">#{s.studentCode}</span></span>
                           {isEnrolled ? (
-                            <span className="text-[10px] text-green-500 font-bold uppercase tracking-wider bg-green-500/10 px-2 py-1 rounded-full">Đã ghi danh</span>
+                            <CheckIcon className="w-4 h-4 text-green-500" />
                           ) : (
-                            <Button variant="ghost" className="h-8 text-xs text-primary" onClick={() => handleMapStudents([s.id!])}>+ Thêm</Button>
+                            <Button variant="ghost" className="h-8 text-[10px] font-black uppercase tracking-widest text-primary hover:bg-primary/10 px-3 rounded-lg" onClick={() => handleMapStudents([s.id!])}>+ Thêm</Button>
                           )}
                         </div>
                       );
@@ -367,8 +395,8 @@ export const Sections = () => {
               );
             })()}
           </div>
-          <div className="pt-4 border-t border-foreground/10">
-            <Button className="w-full" onClick={() => setIsMapModalOpen(false)}>
+          <div className="pt-6 border-t border-foreground/5">
+            <Button className="w-full h-12 rounded-2xl shadow-xl shadow-primary/10" onClick={() => setIsMapModalOpen(false)}>
               Hoàn tất ghi danh
             </Button>
           </div>
@@ -376,45 +404,45 @@ export const Sections = () => {
       </Modal>
 
       {/* Modal Xem Danh Sách Học Sinh */}
-      <Modal isOpen={isViewStudentsModalOpen} onClose={() => setIsViewStudentsModalOpen(false)} title="Danh sách học sinh của lớp">
-        <div className="space-y-4">
-          <div className="max-h-[450px] overflow-auto space-y-2 pr-2 custom-scrollbar">
+      <Modal isOpen={isViewStudentsModalOpen} onClose={() => setIsViewStudentsModalOpen(false)} title="Danh sách lớp học phần">
+        <div className="space-y-6 pt-2">
+          <div className="max-h-[500px] overflow-auto space-y-2 pr-2 custom-scrollbar">
             {enrollments?.filter(e => e.sectionId === selectedSectionId).map((enrollment) => {
               const student = students?.find(s => s.id === enrollment.studentId);
               if (!student) return null;
 
               return (
-                <div key={enrollment.id} className="flex items-center justify-between p-3 rounded-xl bg-foreground/5 border border-foreground/5 group">
-                  <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-xs font-bold text-primary">
+                <div key={enrollment.id} className="flex items-center justify-between p-4 rounded-2xl bg-foreground/5 border border-foreground/5 group/item transition-all hover:bg-foreground/10">
+                  <div className="flex items-center gap-4">
+                    <div className="w-10 h-10 rounded-2xl bg-primary/20 flex items-center justify-center text-xs font-black text-primary shadow-inner">
                       {student.name.charAt(0)}
                     </div>
                     <div>
-                      <p className="text-foreground text-sm font-medium">{student.name}</p>
-                      <p className="text-foreground/40 text-[10px] font-bold uppercase">{student.studentCode}</p>
+                      <p className="text-sm font-black text-foreground">{student.name}</p>
+                      <p className="text-[10px] font-bold uppercase tracking-widest text-foreground/30">{student.studentCode}</p>
                     </div>
                   </div>
                   <Button 
                     variant="ghost" 
-                    className="p-2 text-red-500/30 group-hover:text-red-500 hover:bg-red-500/10 transition-all"
+                    className="p-2 w-10 h-10 rounded-xl text-red-500/20 group-hover/item:text-red-500 hover:bg-red-500/10 transition-all"
                     onClick={() => handleUnenrollStudent(enrollment.id!)}
                   >
-                    <Trash2 className="w-4 h-4" />
+                    <Trash2 className="w-5 h-5" />
                   </Button>
                 </div>
               );
             })}
             
             {enrollments?.filter(e => e.sectionId === selectedSectionId).length === 0 && (
-              <div className="text-center py-10">
-                <Users className="w-12 h-12 text-foreground/5 mx-auto mb-3" />
-                <p className="text-foreground/40 text-sm italic">Lớp học phần này chưa có học sinh nào.</p>
+              <div className="text-center py-20 bg-foreground/5 rounded-[2rem] border border-dashed border-foreground/10">
+                <Users className="w-12 h-12 text-foreground/5 mx-auto mb-4" />
+                <p className="text-foreground/40 text-sm font-bold opacity-50">Lớp hiện chưa có học sinh nào.</p>
               </div>
             )}
           </div>
-          <div className="pt-4 border-t border-foreground/10">
-            <Button variant="secondary" className="w-full" onClick={() => setIsViewStudentsModalOpen(false)}>
-              Đóng
+          <div className="pt-4 border-t border-foreground/5">
+            <Button variant="secondary" className="w-full h-12 rounded-2xl" onClick={() => setIsViewStudentsModalOpen(false)}>
+              Đóng danh sách
             </Button>
           </div>
         </div>
@@ -422,3 +450,9 @@ export const Sections = () => {
     </div>
   );
 };
+
+const CheckIcon = ({ className }: { className?: string }) => (
+  <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+  </svg>
+);

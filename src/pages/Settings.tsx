@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { ShieldCheck, Download, Upload, Lock, RefreshCcw } from 'lucide-react';
+import { ShieldCheck, Download, Upload, Lock, RefreshCcw, Settings as SettingsIcon } from 'lucide-react';
+import { PageHeader } from '../components/ui/PageHeader';
 import { Button } from '../components/ui/Button';
 import { Card } from '../components/ui/Card';
 import { Input } from '../components/ui/Input';
@@ -46,10 +47,15 @@ export const Settings = () => {
 
   return (
     <div className="space-y-8">
-      <div>
-        <h1 className="text-3xl font-bold text-foreground mb-2">Cài đặt hệ thống</h1>
-        <p className="text-foreground/50">Quản lý bảo mật, dữ liệu và thiết lập ứng dụng.</p>
-      </div>
+      <PageHeader
+        title="Cài đặt hệ thống"
+        description="Quản lý bảo mật, dữ liệu và thiết lập ứng dụng."
+        icon={<SettingsIcon className="w-8 h-8" />}
+        breadcrumbs={[
+          { label: 'Trang chủ' },
+          { label: 'Cài đặt', active: true }
+        ]}
+      />
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
         {/* Security Section */}

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { Plus, GraduationCap, Trash2, Search, Pencil } from 'lucide-react';
 import { db } from '../db/db';
@@ -8,6 +8,7 @@ import { Input } from '../components/ui/Input';
 import { Modal } from '../components/ui/Modal';
 import { motion } from 'framer-motion';
 import { useFilter } from '../context/FilterContext';
+import { PageHeader } from '../components/ui/PageHeader';
 
 export const Teachers = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -18,21 +19,32 @@ export const Teachers = () => {
   const [formData, setFormData] = useState({
     name: '',
     teacherCode: '',
-    department: ''
+    email: '',
+    phone: '',
+    department: '',
+    avatar: '' as string | undefined
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
 
-  const teachers = useLiveQuery(
-    () => db.teachers.toArray(),
-    []
-  );
+  const teachers = useLiveQuery(() => db.teachers.toArray());
+  const teacherCount = useLiveQuery(() => db.teachers.count());
+
+  const filteredTeachers = useMemo(() => {
+    if (!teachers) return [];
+    return teachers.filter(t => 
+      t.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      t.teacherCode.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      t.department?.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+  }, [teachers, searchTerm]);
 
   const handleAddTeacher = async (e: React.FormEvent) => {
     e.preventDefault();
     const newErrors: Record<string, string> = {};
     
-    if (!formData.name.trim()) newErrors.name = 'Vui lòng nhập họ và tên';
+    if (!formData.name.trim()) newErrors.name = 'Vui lòng nhập họ tên';
     if (!formData.teacherCode.trim()) newErrors.teacherCode = 'Vui lòng nhập mã giáo viên';
+    if (!formData.email.trim()) newErrors.email = 'Vui lòng nhập email';
 
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
@@ -40,21 +52,30 @@ export const Teachers = () => {
     }
 
     try {
+      const data = {
+        name: formData.name.trim(),
+        teacherCode: formData.teacherCode.trim(),
+        email: formData.email.trim(),
+        phone: formData.phone.trim(),
+        department: formData.department.trim(),
+        avatar: formData.avatar
+      };
+
       if (editingId) {
-        await db.teachers.update(editingId, formData);
+        await db.teachers.update(editingId, data);
       } else {
         await db.teachers.add({
-          ...formData,
+          ...data,
           createdAt: Date.now()
         });
       }
       
-      setFormData({ name: '', teacherCode: '', department: '' });
+      setFormData({ name: '', teacherCode: '', email: '', phone: '', department: '', avatar: '' });
       setErrors({});
       setEditingId(null);
       setIsModalOpen(false);
     } catch (error) {
-      console.error('Lỗi lưu giáo viên:', error);
+      console.error('Lỗi khi lưu giáo viên:', error);
       alert('Không thể lưu giáo viên. Vui lòng thử lại!');
     }
   };
@@ -63,7 +84,10 @@ export const Teachers = () => {
     setFormData({
       name: teacher.name,
       teacherCode: teacher.teacherCode,
-      department: teacher.department || ''
+      email: teacher.email || '',
+      phone: teacher.phone || '',
+      department: teacher.department || '',
+      avatar: teacher.avatar
     });
     setEditingId(teacher.id);
     setIsModalOpen(true);
@@ -75,27 +99,30 @@ export const Teachers = () => {
     }
   };
 
-  const filteredTeachers = teachers?.filter(t => 
-    t.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    t.teacherCode.toLowerCase().includes(searchTerm.toLowerCase())
-  );
-
   return (
     <div className="space-y-8">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-bold text-foreground mb-2">Danh mục Giáo viên</h1>
-          <p className="text-foreground/50">Quản lý danh sách giáo viên giảng dạy trong hệ thống.</p>
-        </div>
+      <PageHeader
+        title="Giáo viên"
+        description="Quản lý thông tin và hồ sơ đội ngũ giáo viên trong trường."
+        icon={<GraduationCap className="w-8 h-8" />}
+        breadcrumbs={[
+          { label: 'Trang chủ' },
+          { label: 'Nhân sự', active: true }
+        ]}
+        stats={[
+          { label: 'Tổng số giáo viên', value: teacherCount || 0, icon: GraduationCap, color: 'text-accent' },
+        ]}
+      >
         <Button onClick={() => {
           setEditingId(null);
-          setFormData({ name: '', teacherCode: '', department: '' });
+          setFormData({ name: '', teacherCode: '', email: '', phone: '', department: '', avatar: '' });
+          setErrors({});
           setIsModalOpen(true);
         }}>
           <Plus className="w-5 h-5" />
           Thêm Giáo Viên
         </Button>
-      </div>
+      </PageHeader>
 
       <div className="relative">
         <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-foreground/30" />

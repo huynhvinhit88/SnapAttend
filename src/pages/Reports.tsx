@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react';
+import * as XLSX from 'xlsx';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { FileSpreadsheet, Filter, CheckCircle2, Clock, XCircle, Calendar, BookOpen, Layers, Trash2, BarChart3, Cloud, RefreshCw } from 'lucide-react';
 import { db } from '../db/db';
@@ -143,9 +144,9 @@ export const Reports = () => {
     }).sort((a, b) => b.createdAt - a.createdAt); // Mới nhất lên đầu
   }, [sessions, sections, filter]);
 
-  const generateCSVContent = () => {
-    let csvContent = "\uFEFF"; // BOM cho UTF-8
-    csvContent += "Lop hoc phan, Ca hoc, Ho ten, Ma HS, Trang thai, Ngay, Gio ghi nhan\n";
+  const getReportAOA = () => {
+    const headers = ["Lớp học phần", "Ca học", "Họ và tên", "Mã HS", "Trạng thái", "Ngày", "Giờ ghi nhận"];
+    const rows: any[][] = [];
 
     matchingSessions.forEach(session => {
       const section = sections?.find(s => s.id === session.sectionId);
@@ -156,25 +157,29 @@ export const Reports = () => {
         const record = records?.find(r => r.sessionId === session.id && r.studentId === enrollment.studentId);
         const status = record?.status || 'present';
         const timestamp = record ? format(new Date(record.timestamp), 'HH:mm:ss') : '-';
-        const statusText = status === 'present' ? 'Co mat' : status === 'late' ? 'Tre' : 'Vang';
+        const statusText = status === 'present' ? 'Có mặt' : status === 'late' ? 'Trễ' : 'Vắng';
         
-        csvContent += `"${section?.name}", "${session.startTime}-${session.endTime}", "${student?.name}", "${student?.studentCode}", "${statusText}", "${session.date}", "${timestamp}"\n`;
+        rows.push([
+          section?.name || 'N/A',
+          `${session.startTime}-${session.endTime}`,
+          student?.name || 'N/A',
+          student?.studentCode || 'N/A',
+          statusText,
+          session.date,
+          timestamp
+        ]);
       });
     });
-    return csvContent;
+    return [headers, ...rows];
   };
 
-  const handleExportCSV = () => {
+  const handleExportExcel = () => {
     if (!matchingSessions || matchingSessions.length === 0) return alert('Không có dữ liệu để xuất!');
-    const csvContent = generateCSVContent();
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.setAttribute("href", url);
-    link.setAttribute("download", `Bao_cao_tong_hop_${format(new Date(), 'ddMMyyyy')}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    const aoa = getReportAOA();
+    const wb = XLSX.utils.book_new();
+    const ws = XLSX.utils.aoa_to_sheet(aoa);
+    XLSX.utils.book_append_sheet(wb, ws, "Báo cáo");
+    XLSX.writeFile(wb, `Bao_cao_tong_hop_${format(new Date(), 'ddMMyyyy')}.xlsx`);
   };
 
   const handleUploadToDrive = async () => {
@@ -182,10 +187,20 @@ export const Reports = () => {
     
     setIsSyncing(true);
     try {
-      const csvContent = generateCSVContent();
-      const fileName = `Bao_cao_SnapAttend_${format(new Date(), 'yyyyMMdd_HHmm')}.csv`;
-      await googleDriveService.uploadFile(fileName, csvContent, 'text/csv');
-      alert('Đã tải báo cáo lên Google Drive thành công!');
+      const aoa = getReportAOA();
+      const wb = XLSX.utils.book_new();
+      const ws = XLSX.utils.aoa_to_sheet(aoa);
+      XLSX.utils.book_append_sheet(wb, ws, "Báo cáo");
+      
+      const excelBuffer = XLSX.write(wb, { type: 'array', bookType: 'xlsx' });
+      const fileName = `Bao_cao_SnapAttend_${format(new Date(), 'yyyyMMdd_HHmm')}.xlsx`;
+      
+      await googleDriveService.uploadFile(
+        fileName, 
+        excelBuffer, 
+        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+      );
+      alert('Đã tải báo cáo Excel lên Drive thành công!');
     } catch (error) {
       console.error(error);
       alert('Lỗi khi tải lên Drive: ' + (typeof error === 'string' ? error : 'Vui lòng kiểm tra cấu hình trong Cài đặt'));
@@ -206,9 +221,9 @@ export const Reports = () => {
             {isSyncing ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Cloud className="w-4 h-4" />}
             Tải lên Drive
           </Button>
-          <Button onClick={handleExportCSV} disabled={matchingSessions.length === 0}>
+          <Button onClick={handleExportExcel} disabled={matchingSessions.length === 0}>
             <FileSpreadsheet className="w-5 h-5" />
-            Xuất CSV
+            Xuất Excel
           </Button>
         </div>
       </PageHeader>

@@ -19,7 +19,7 @@ interface PageHeaderProps {
   stats?: StatItem[];
 }
 
-export const PageHeader = ({ title, description, icon, children, breadcrumbs, stats }: PageHeaderProps) => {
+export const PageHeader = ({ title, description, icon, children, stats }: PageHeaderProps) => {
   return (
     <motion.div 
       initial={{ opacity: 0, y: -20 }}
@@ -37,18 +37,6 @@ export const PageHeader = ({ title, description, icon, children, breadcrumbs, st
             </div>
           )}
           <div className="space-y-1">
-            {breadcrumbs && (
-              <div className="flex items-center gap-2 mb-2">
-                {breadcrumbs.map((crumb, idx) => (
-                  <React.Fragment key={idx}>
-                    <span className={`text-[10px] font-bold uppercase tracking-widest ${crumb.active ? 'text-primary' : 'text-foreground/30'}`}>
-                      {crumb.label}
-                    </span>
-                    {idx < breadcrumbs.length - 1 && <span className="text-foreground/10 text-[10px]">/</span>}
-                  </React.Fragment>
-                ))}
-              </div>
-            )}
             <h1 className="text-3xl md:text-4xl font-black text-foreground tracking-tight leading-none">
               {title}
             </h1>

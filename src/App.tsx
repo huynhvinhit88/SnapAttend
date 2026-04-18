@@ -14,6 +14,8 @@ import { authService } from './services/auth.service';
 import { PinLock } from './components/ui/PinLock';
 import { FilterProvider, useFilter } from './context/FilterContext';
 import { ThemeProvider } from './context/ThemeContext';
+import { googleDriveService } from './services/googleDrive.service';
+import { useEffect } from 'react';
 
 function SnapAttendApp() {
   const [activePage, setActivePage] = useState('sessions');
@@ -30,6 +32,14 @@ function SnapAttendApp() {
     clearFilters(); // Xóa dữ liệu tìm kiếm khi khóa
     setIsUnlocked(false);
   };
+
+  // Global Google Redirect Handler
+  useEffect(() => {
+    const token = googleDriveService.handleRedirectCallback();
+    if (token) {
+      setActivePage('data');
+    }
+  }, []);
 
   if (!isUnlocked) {
     return <PinLock onSuccess={() => setIsUnlocked(true)} />;

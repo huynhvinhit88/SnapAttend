@@ -213,8 +213,8 @@ class GoogleDriveService {
 
   async getAuthRedirectUrl(state: string = ''): Promise<string> {
     const config = await this.getConfig();
-    // Lấy URL hiện tại, loại bỏ phần hash (#) và query (?) để có redirect_uri sạch
-    const redirectUri = window.location.origin + window.location.pathname;
+    // Luôn sử dụng Origin (địa chỉ gốc) làm redirect_uri để dễ cấu hình trên Google Console
+    const redirectUri = window.location.origin + '/';
     const scope = 'https://www.googleapis.com/auth/drive.file';
     
     const params = new URLSearchParams({

@@ -229,16 +229,13 @@ export const DataManagement = () => {
   };
 
   useEffect(() => {
-    // 1. Kiểm tra redirect callback nếu có (trước khi dọn hash)
-    const hash = window.location.hash;
-    const isCallback = hash.includes('access_token');
-    
-    const token = googleDriveService.handleRedirectCallback();
-    if (token || isCallback) {
-      setIsConnected(true);
+    // Nếu vừa quay lại từ Google Login và đã có kết nối, tự động vào tab Cloud
+    if (googleDriveService.isConnected()) {
       setActiveTab('cloud');
     }
+  }, []);
 
+  useEffect(() => {
     if (activeTab === 'cloud') {
       fetchCloudFiles();
     }

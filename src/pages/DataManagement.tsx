@@ -152,29 +152,41 @@ export const DataManagement = () => {
     }
   };
 
-  const handleConnectDrive = async () => {
-    setIsSyncing(true);
-    try {
-      await googleDriveService.authenticate();
-      setIsConnected(true);
-      alert('Đã kết nối Google Drive thành công!');
-      fetchCloudFiles();
-    } catch (error) {
-      console.error(error);
-      alert('Không thể kết nối Google Drive. Vui lòng kiểm tra pop-up hoặc cài đặt.');
-    } finally {
-      setIsSyncing(false);
+  const ensureAuthenticated = async () => {
+    if (googleDriveService.isConnected()) return true;
+
+    // Kiểm tra nếu là PWA hoặc Mobile
+    const isPWA = window.matchMedia('(display-mode: standalone)').matches;
+    const isMobile = /Android|iPhone|iPad/i.test(navigator.userAgent);
+
+    if (isPWA || isMobile) {
+      // Sử dụng Redirect Flow cho PWA/Mobile để tránh bị chặn popup
+      const authUrl = await googleDriveService.getAuthRedirectUrl('cloud');
+      window.location.href = authUrl;
+      return false; // Sẽ redirect nên không chạy tiếp
+    } else {
+      // Sử dụng Popup Flow cho Desktop
+      try {
+        await googleDriveService.authenticate();
+        setIsConnected(true);
+        return true;
+      } catch (error) {
+        console.error(error);
+        alert('Vui lòng cho phép mở cửa sổ đăng nhập Google.');
+        return false;
+      }
     }
   };
 
+  const handleConnectDrive = async () => {
+    setIsSyncing(true);
+    await ensureAuthenticated();
+    setIsSyncing(false);
+  };
+
   const handleCloudBackup = async () => {
-    // Đăng nhập ngay lập tức để giữ user gesture (quan trọng cho mobile/PWA)
-    try {
-      await googleDriveService.authenticate();
-      setIsConnected(true);
-    } catch (error) {
-      return alert('Vui lòng cho phép mở cửa sổ đăng nhập Google.');
-    }
+    if (!(await ensureAuthenticated())) return;
+    setIsConnected(true);
 
     setIsSyncing(true);
     try {
@@ -194,13 +206,8 @@ export const DataManagement = () => {
   const handleRestoreFromCloud = async (fileId: string) => {
     if (!confirm('Bạn có chắc chắn muốn khôi phục dữ liệu từ bản sao lưu này? Dữ liệu hiện tại sẽ bị ghi đè.')) return;
     
-    // Đăng nhập ngay lập tức để giữ user gesture
-    try {
-      await googleDriveService.authenticate();
-      setIsConnected(true);
-    } catch (error) {
-      return alert('Vui lòng cho phép mở cửa sổ đăng nhập Google.');
-    }
+    if (!(await ensureAuthenticated())) return;
+    setIsConnected(true);
 
     setIsSyncing(true);
     try {
@@ -222,6 +229,16 @@ export const DataManagement = () => {
   };
 
   useEffect(() => {
+    // 1. Kiểm tra redirect callback nếu có (trước khi dọn hash)
+    const hash = window.location.hash;
+    const isCallback = hash.includes('access_token');
+    
+    const token = googleDriveService.handleRedirectCallback();
+    if (token || isCallback) {
+      setIsConnected(true);
+      setActiveTab('cloud');
+    }
+
     if (activeTab === 'cloud') {
       fetchCloudFiles();
     }
@@ -566,13 +583,8 @@ export const DataManagement = () => {
   };
 
   const handleCloudImport = async () => {
-    // Đăng nhập ngay lập tức để giữ user gesture
-    try {
-      await googleDriveService.authenticate();
-      setIsConnected(true);
-    } catch (error) {
-      return alert('Vui lòng cho phép mở cửa sổ đăng nhập Google.');
-    }
+    if (!(await ensureAuthenticated())) return;
+    setIsConnected(true);
 
     try {
       setIsSyncing(true);

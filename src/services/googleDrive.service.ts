@@ -210,6 +210,41 @@ class GoogleDriveService {
   isConnected(): boolean {
     return !!this.accessToken;
   }
+
+  async getAuthRedirectUrl(state: string = ''): Promise<string> {
+    const config = await this.getConfig();
+    const redirectUri = window.location.origin + window.location.pathname;
+    const scope = 'https://www.googleapis.com/auth/drive.file';
+    
+    return `https://accounts.google.com/o/oauth2/v2/auth?` +
+      `client_id=${config.clientId}` +
+      `&redirect_uri=${encodeURIComponent(redirectUri)}` +
+      `&response_type=token` +
+      `&scope=${encodeURIComponent(scope)}` +
+      `&state=${encodeURIComponent(state)}` +
+      `&prompt=consent`;
+  }
+
+  handleRedirectCallback(): string | null {
+    const hash = window.location.hash;
+    if (!hash) return null;
+
+    const params = new URLSearchParams(hash.substring(1));
+    const token = params.get('access_token');
+    
+    if (token) {
+      this.accessToken = token;
+      // Clear hash from URL for clean look
+      window.history.replaceState({}, document.title, window.location.pathname + window.location.search);
+      return token;
+    }
+    
+    return null;
+  }
+
+  setAccessToken(token: string) {
+    this.accessToken = token;
+  }
 }
 
 export const googleDriveService = new GoogleDriveService();

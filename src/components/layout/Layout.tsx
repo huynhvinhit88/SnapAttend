@@ -18,13 +18,20 @@ export const Layout = ({ children, activeId, onNavigate, onLock }: LayoutProps) 
   }, [activeId]);
 
   return (
-    <div className="flex flex-col lg:flex-row h-screen bg-background overflow-hidden">
+    <div className="flex flex-col lg:flex-row min-h-screen bg-background relative overflow-hidden">
+      {/* Ambient Background Orbs (Lively Accents) */}
+      <div className="bg-orb w-[500px] h-[500px] -top-24 -left-24 bg-orb-1/10" />
+      <div className="bg-orb w-[400px] h-[400px] -bottom-24 -right-24 bg-orb-2/10" />
+      <div className="bg-orb w-[300px] h-[300px] top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-primary/5" />
+
       {/* Mobile Header */}
       <header className="lg:hidden flex items-center justify-between p-4 bg-background-light/30 backdrop-blur-xl border-b border-foreground/10 z-40">
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center shadow-lg shadow-primary/30">
-            <Calendar className="text-foreground w-5 h-5" />
-          </div>
+          <img 
+            src="/logo.png" 
+            alt="SnapAttend Logo" 
+            className="w-8 h-8 object-contain rounded-lg shadow-lg shadow-primary/20" 
+          />
           <h1 className="text-lg font-bold text-foreground tracking-tight">SnapAttend</h1>
         </div>
         <button 

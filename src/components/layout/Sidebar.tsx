@@ -41,15 +41,17 @@ export const Sidebar = ({ activeId, onNavigate, onLock, isOpen, onClose }: Sideb
 
       {/* Sidebar Container */}
       <div className={clsx(
-        "fixed inset-y-0 left-0 w-72 h-full bg-background-light/40 backdrop-blur-2xl border-r border-foreground/10 flex flex-col p-4 z-[60] transition-transform duration-300 lg:static lg:translate-x-0 lg:w-64",
+        "fixed inset-y-0 left-0 w-72 h-full bg-background-light/25 backdrop-blur-3xl border-r border-foreground/5 flex flex-col p-4 z-[60] transition-transform duration-300 lg:static lg:translate-x-0 lg:w-64",
         isOpen ? "translate-x-0" : "-translate-x-full"
       )}>
         <div className="flex items-center justify-between px-4 py-8">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center shadow-lg shadow-primary/20">
-              <Calendar className="text-foreground w-6 h-6" />
-            </div>
-            <h1 className="text-xl font-bold text-foreground tracking-tight">SnapAttend</h1>
+            <img 
+              src="/logo.png" 
+              alt="SnapAttend Logo" 
+              className="w-10 h-10 object-contain rounded-2xl shadow-xl shadow-primary/20" 
+            />
+            <h1 className="text-xl font-black text-foreground tracking-tighter">SnapAttend</h1>
           </div>
           <button 
             onClick={onClose}
@@ -65,9 +67,9 @@ export const Sidebar = ({ activeId, onNavigate, onLock, isOpen, onClose }: Sideb
             key={item.id}
             onClick={() => onNavigate(item.id)}
             className={clsx(
-              'w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all font-medium',
+              'w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all font-bold',
               activeId === item.id 
-                ? 'bg-primary text-foreground shadow-lg shadow-primary/20' 
+                ? 'bg-primary text-white shadow-xl shadow-primary/30' 
                 : 'text-foreground/50 hover:bg-foreground/5 hover:text-foreground'
             )}
           >

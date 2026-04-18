@@ -14,7 +14,7 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     // Ưu tiên lựa chọn đã lưu, nếu không thì theo hệ thống
     const saved = localStorage.getItem('snapattend_theme');
     if (saved === 'light' || saved === 'dark') return saved;
-    return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    return 'dark'; // Mặc định luôn là giao diện Tối
   });
 
   useEffect(() => {
@@ -25,7 +25,6 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   }, [theme]);
 
   const toggleTheme = () => {
-    setTheme(prev => (prev === 'light' ? 'dark' : 'red')); // Wait, fixing logic
     setTheme(prev => (prev === 'light' ? 'dark' : 'light'));
   };
 

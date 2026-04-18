@@ -1,20 +1,24 @@
 @import "tailwindcss";
 
 :root {
-  /* Hệ màu Light Mode (Mặc định) */
-  --background: 210 40% 98%;
+  /* Hệ màu Light Mode (Premium Lively) */
+  --background: 220 100% 98.5%; /* Trắng xanh nhạt tinh tế */
   --background-light: 0 0% 100%;
   --foreground: 222.2 84% 4.9%;
   --primary: 224.3 76.3% 48%;
   --primary-hover: 224.3 76.3% 58%;
   --accent: 280 80% 60%;
-  --card-border: 214.3 31.8% 91.4%;
-  --card-bg-opacity: 0.8;
-  --input-bg: 210 40% 96%;
+  --card-border: 220 20% 90%;
+  --card-bg-opacity: 0.7;
+  --input-bg: 220 50% 96%;
+  
+  /* Màu cho quả cầu nền */
+  --orb-1: 224.3 76.3% 70%;
+  --orb-2: 280 80% 80%;
 }
 
 .dark {
-  /* Hệ màu Dark Mode (Premium hiện tại) */
+  /* Hệ màu Dark Mode (Premium giữ nguyên) */
   --background: 222.2 84% 4.9%;
   --background-light: 222.2 84% 12%;
   --foreground: 210 40% 98%;
@@ -24,6 +28,9 @@
   --card-border: 217.2 32.6% 17.5%;
   --card-bg-opacity: 0.5;
   --input-bg: 222.2 84% 15%;
+  
+  --orb-1: 224.3 76.3% 20%;
+  --orb-2: 280 80% 25%;
 }
 
 @theme {
@@ -34,6 +41,9 @@
   --color-primary: hsl(var(--primary));
   --color-primary-hover: hsl(var(--primary-hover));
   --color-accent: hsl(var(--accent));
+
+  --color-orb-1: hsl(var(--orb-1));
+  --color-orb-2: hsl(var(--orb-2));
   
   --radius-xl: 0.75rem;
   --radius-2xl: 1rem;
@@ -42,60 +52,59 @@
 
 @layer base {
   * {
-    @apply border-white/10 transition-colors duration-300;
-  }
-
-  /* Đè lại border cho light mode */
-  .light * {
-    border-color: hsl(var(--card-border) / 0.1);
+    @apply border-white/5 transition-all duration-300;
   }
 
   body {
-    @apply bg-background text-foreground antialiased selection:bg-primary/30;
+    @apply bg-background text-foreground antialiased selection:bg-primary/30 relative overflow-x-hidden;
     font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    min-height: 100vh;
   }
 }
 
 @layer components {
+  /* Quả cầu màu nền trang trí */
+  .bg-orb {
+    @apply absolute blur-[120px] rounded-full opacity-30 pointer-events-none;
+  }
+
   .glass-card {
     background-color: hsla(var(--background-light) / var(--card-bg-opacity));
-    @apply backdrop-blur-md border border-white/10 rounded-2xl shadow-xl p-6;
-    border-color: hsl(var(--card-border));
+    @apply backdrop-blur-xl border rounded-3xl p-6 transition-all;
+    border-color: hsl(var(--card-border) / 0.5);
+    box-shadow: 
+      0 4px 6px -1px rgb(0 0 0 / 0.05), 
+      0 2px 4px -2px rgb(0 0 0 / 0.05),
+      inset 0 0 0 1px hsla(0, 0%, 100%, 0.4);
+  }
+
+  .dark .glass-card {
+    box-shadow: 0 10px 30px -10px rgba(0,0,0,0.5);
+    border-color: hsla(var(--foreground), 0.05);
   }
 
   .btn-primary {
-    @apply px-4 py-2 bg-primary hover:bg-primary-hover text-white rounded-xl transition-all active:scale-95 shadow-lg shadow-primary/20 flex items-center justify-center gap-2 font-medium;
+    @apply px-5 py-2.5 bg-primary hover:bg-primary-hover text-white rounded-2xl transition-all active:scale-95 shadow-lg shadow-primary/25 flex items-center justify-center gap-2 font-bold;
   }
 
   .btn-secondary {
-    background-color: hsla(var(--background-light) / 0.1);
-    @apply px-4 py-2 hover:bg-white/10 rounded-xl transition-all active:scale-95 border flex items-center justify-center gap-2 font-medium;
+    background-color: hsla(var(--background-light) / 0.4);
+    @apply px-5 py-2.5 hover:bg-white/10 rounded-2xl transition-all active:scale-95 border flex items-center justify-center gap-2 font-bold;
     color: hsl(var(--foreground));
     border-color: hsl(var(--card-border));
   }
 
   .input-field {
-    background-color: hsl(var(--input-bg));
-    @apply w-full px-4 py-3 border border-white/10 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary/50 transition-all;
+    background-color: hsl(var(--input-bg) / 0.5);
+    @apply w-full px-5 py-3.5 border border-white/5 rounded-2xl focus:outline-none focus:ring-4 focus:ring-primary/10 focus:border-primary/50 transition-all font-medium;
     color: hsl(var(--foreground));
     border-color: hsl(var(--card-border));
   }
 
   .label-text {
-    @apply text-sm font-medium mb-1.5 block;
-    color: hsl(var(--foreground) / 0.6);
+    @apply text-xs font-bold uppercase tracking-widest mb-2 block;
+    color: hsl(var(--foreground) / 0.4);
   }
-}
-
-/* Custom transitions */
-.page-transition-enter {
-  opacity: 0;
-  transform: translateY(10px);
-}
-.page-transition-enter-active {
-  opacity: 1;
-  transform: translateY(0);
-  transition: opacity 300ms, transform 300ms;
 }
 
 /* Custom Scrollbar */
@@ -107,5 +116,5 @@
 }
 .custom-scrollbar::-webkit-scrollbar-thumb {
   background-color: hsla(var(--foreground) / 0.1);
-  @apply rounded-full hover:bg-white/20;
+  @apply rounded-full hover:bg-foreground/20;
 }

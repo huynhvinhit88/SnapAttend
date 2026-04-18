@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Sidebar } from './Sidebar';
-import { Menu, Calendar } from 'lucide-react';
+import { Menu } from 'lucide-react';
 
 interface LayoutProps {
   children: React.ReactNode;

@@ -1,7 +1,6 @@
-import { 
   Users, BookOpen, Calendar, BarChart3, 
   Settings, Database, GraduationCap, School,
-  Layers, FileUp, Lock
+  Layers, Lock
 } from 'lucide-react';
 import { clsx } from 'clsx';
 

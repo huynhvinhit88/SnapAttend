@@ -1,6 +1,6 @@
-import React, { useCallback } from 'react';
+import { useCallback } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
-import { ChevronLeft, CheckCircle2, Clock, XCircle, Info, RefreshCw } from 'lucide-react';
+import { ChevronLeft, CheckCircle2, Clock, XCircle, Info } from 'lucide-react';
 import { db } from '../db/db';
 import { Button } from '../components/ui/Button';
 import { Card } from '../components/ui/Card';
@@ -161,13 +161,17 @@ export const Attendance = ({ sessionId, onBack }: AttendanceProps) => {
                  
                  await db.transaction('rw', [db.attendance, db.sessions], async () => {
                    if (missingStudents.length > 0) {
-                     const newRecords = missingStudents.map(s => ({
-                       sessionId,
-                       studentId: s!.id!,
-                       status: 'present' as const,
-                       timestamp: Date.now()
-                     }));
-                     await db.attendance.bulkAdd(newRecords);
+                     const newRecords = missingStudents
+                       .filter((s): s is NonNullable<typeof s> => !!s && !!s.id)
+                       .map(s => ({
+                         sessionId,
+                         studentId: s.id as number,
+                         status: 'present' as const,
+                         timestamp: Date.now()
+                       }));
+                     if (newRecords.length > 0) {
+                       await db.attendance.bulkAdd(newRecords);
+                     }
                    }
                    await db.sessions.update(sessionId, { status: 'completed' });
                  });

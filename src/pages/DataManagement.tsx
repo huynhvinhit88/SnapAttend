@@ -133,10 +133,14 @@ export const DataManagement = () => {
 
   // Cloud Sync Logic
   const fetchCloudFiles = async () => {
+    // Không tự động authenticate ở đây vì sẽ bị chặn popup (do không phải user gesture)
+    if (!googleDriveService.isConnected()) {
+      setIsConnected(false);
+      return;
+    }
+
     try {
       setIsSyncing(true);
-      // Kiểm tra kết nối
-      await googleDriveService.authenticate();
       setIsConnected(true);
       const files = await googleDriveService.listFiles('application/json');
       setCloudFiles(files.sort((a, b) => new Date(b.createdTime).getTime() - new Date(a.createdTime).getTime()));

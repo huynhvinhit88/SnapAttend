@@ -52,7 +52,7 @@
 
 @layer base {
   * {
-    @apply border-white/5 transition-all duration-300;
+    @apply border-white/5;
   }
 
   body {

@@ -81,7 +81,7 @@
 
 ### 4.6. Báo cáo & Đồng bộ dữ liệu
 * **Báo cáo điểm danh:**
-  * Bộ lọc thông minh: Cho phép lọc theo Môn học, sau đó chọn Ca học cụ thể (hiển thị rõ Thứ, Ngày, Giờ).
+  * Bộ lọc thông minh: Cho phép lọc theo Môn học, sau đó chọn Lớp học phần, sau đó chọn Ca học cụ thể (hiển thị rõ Thứ, Ngày, Giờ).
   * Hiển thị danh sách kết quả gồm: **Họ tên HS, Mã HS, Trạng thái (Có mặt/Trễ/Vắng), và Ghi chú (nếu có)**.
   * Hỗ trợ chỉnh sửa nhanh trạng thái nếu có sai sót trong quá trình báo cáo.
   * Thống kê rõ ràng trạng thái: Số lượng Có mặt / Trễ / Vắng.

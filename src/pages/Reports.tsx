@@ -3,7 +3,7 @@ import * as XLSX from 'xlsx';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { 
   FileSpreadsheet, Filter, CheckCircle2, Clock, XCircle, 
-  Calendar, BookOpen, Layers, Trash2, BarChart3, 
+  Calendar, BookOpen, Layers, BarChart3, 
   Cloud, RefreshCw, AlertCircle, HelpCircle 
 } from 'lucide-react';
 import { db } from '../db/db';

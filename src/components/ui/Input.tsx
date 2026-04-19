@@ -16,7 +16,7 @@ interface InputProps extends React.InputHTMLAttributes<HTMLInputElement | HTMLSe
 }
 
 export const Input = React.forwardRef<HTMLInputElement & HTMLSelectElement & HTMLTextAreaElement, InputProps>(
-  ({ className, label, error, type = 'text', icon, options, ...props }, ref) => {
+  ({ className, label, error, type = 'text', icon, onClear, options, ...props }, ref) => {
     const isSelect = type === 'select';
     const isTextarea = type === 'textarea';
 

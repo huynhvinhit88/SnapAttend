@@ -32,6 +32,14 @@ function SnapAttendApp() {
 
   // Global Google Redirect Handler
   useEffect(() => {
+    // 1. Kiểm tra nếu có token đã lưu trước đó (cho việc F5 trang)
+    googleDriveService.loadPersistedToken().then(token => {
+      if (token) {
+        // Có thể cập nhật UI nếu cần
+      }
+    });
+
+    // 2. Xử lý sau khi redirect từ Google
     const result = googleDriveService.handleRedirectCallback();
     if (result?.token) {
       if (result.state === 'pick_folder' || result.state === 'cloud') {

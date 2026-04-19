@@ -300,7 +300,13 @@ export const DataManagement = () => {
     
     // Fetch folder name ngay lập tức nếu đã kết nối
     const initFolder = async () => {
+      // Đợi một chút để đảm bảo loadPersistedToken từ App.tsx có thể đã chạy
+      if (!googleDriveService.isConnected()) {
+        await new Promise(resolve => setTimeout(resolve, 500));
+      }
+
       if (googleDriveService.isConnected()) {
+        setIsConnected(true);
         const name = await googleDriveService.getFolderName();
         setFolderName(name);
       }
@@ -1212,7 +1218,8 @@ export const DataManagement = () => {
         title="Chọn thư mục sao lưu"
       >
         <DriveFolderPicker
-          onSelect={(folder) => {
+          onSelect={async (folder) => {
+            await googleDriveService.saveFolderInfo(folder.id, folder.name);
             setFolderName(folder.name);
             setIsCustomPickerOpen(false);
             setIsConnected(true);

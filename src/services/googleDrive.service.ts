@@ -16,6 +16,7 @@ class GoogleDriveService {
   private accessToken: string | null = null;
   private tokenClient: any = null;
   private lastRedirectResult: { token: string; state: string | null } | null = null;
+  private isInitialized: boolean = false;
   constructor() {
     this.loadScripts();
   }
@@ -90,6 +91,7 @@ class GoogleDriveService {
               reject(response);
             }
             this.accessToken = response.access_token;
+            this.persistToken(this.accessToken, response.expires_in || 3600);
             resolve(response.access_token);
           },
         });
@@ -285,6 +287,10 @@ class GoogleDriveService {
     
     if (token) {
       this.accessToken = token;
+      // Trích xuất expires_in nếu có (thanh hash thường có expires_in)
+      const expiresIn = parseInt(params.get('expires_in') || '3600');
+      this.persistToken(token, expiresIn);
+
       // Clear hash from URL for clean look
       window.history.replaceState({}, document.title, window.location.pathname + window.location.search);
       const result = { token, state };
@@ -292,6 +298,25 @@ class GoogleDriveService {
       return result;
     }
     
+    return null;
+  }
+
+  private async persistToken(token: string, expiresIn: number) {
+    const expiresAt = Date.now() + expiresIn * 1000;
+    await db.settings.put({ id: 'google_drive_token', value: { token, expiresAt } });
+  }
+
+  async loadPersistedToken(): Promise<string | null> {
+    const data = await db.settings.get('google_drive_token');
+    if (data?.value) {
+      const { token, expiresAt } = data.value;
+      if (expiresAt > Date.now()) {
+        this.accessToken = token;
+        return token;
+      } else {
+        await db.settings.delete('google_drive_token');
+      }
+    }
     return null;
   }
 
@@ -309,8 +334,11 @@ class GoogleDriveService {
 
   async disconnect() {
     this.accessToken = null;
-    await db.settings.delete('google_drive_folder_id');
-    await db.settings.delete('google_drive_folder_name');
+    await Promise.all([
+      db.settings.delete('google_drive_folder_id'),
+      db.settings.delete('google_drive_folder_name'),
+      db.settings.delete('google_drive_token')
+    ]);
   }
 }
 

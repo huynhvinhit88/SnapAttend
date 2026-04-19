@@ -157,7 +157,7 @@ export const StudentForm: React.FC<StudentFormProps> = ({
       
       <div className="flex gap-3 pt-6">
         <Button type="button" variant="secondary" className="flex-1 h-12 rounded-2xl" onClick={onCancel}>Hủy</Button>
-        <Button type="submit" className="flex-1 h-12 rounded-2xl shadow-lg shadow-primary/20" loading={isSubmitting}>
+        <Button type="submit" className="flex-1 h-12 rounded-2xl shadow-lg shadow-primary/20" isLoading={isSubmitting}>
           {editingId ? "Cập Nhật" : "Lưu Thông Tin"}
         </Button>
       </div>

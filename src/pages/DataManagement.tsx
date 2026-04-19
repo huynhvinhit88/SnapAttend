@@ -187,7 +187,7 @@ export const DataManagement = () => {
     const authenticated = await ensureAuthenticated();
     if (authenticated) {
       try {
-        const { id, name } = await googleDriveService.pickFolder();
+        const { name } = await googleDriveService.pickFolder();
         setFolderName(name);
         setIsConnected(true);
         fetchCloudFiles();
@@ -201,7 +201,7 @@ export const DataManagement = () => {
   const handleChangeFolder = async () => {
     try {
       setIsSyncing(true);
-      const { id, name } = await googleDriveService.pickFolder();
+      const { name } = await googleDriveService.pickFolder();
       setFolderName(name);
       fetchCloudFiles();
     } catch (err) {

@@ -124,7 +124,7 @@ export const ClassForm: React.FC<ClassFormProps> = ({ editingId, onSuccess, onCa
         <Button type="button" variant="secondary" className="flex-1 h-12 rounded-2xl" onClick={onCancel}>
           Hủy bỏ
         </Button>
-        <Button type="submit" className="flex-1 h-12 rounded-2xl shadow-lg shadow-primary/20" loading={isSubmitting}>
+        <Button type="submit" className="flex-1 h-12 rounded-2xl shadow-lg shadow-primary/20" isLoading={isSubmitting}>
           {editingId ? "Lưu thay đổi" : "Tạo Lớp Học"}
         </Button>
       </div>

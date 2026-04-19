@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { LayoutGrid, School, Users, GraduationCap, BookOpen, ChevronRight } from 'lucide-react';
+import { useState } from 'react';
+import { motion } from 'framer-motion';
+import { LayoutGrid, School, Users, GraduationCap, BookOpen } from 'lucide-react';
 import { PageHeader } from '../components/ui/PageHeader';
 import { OverviewSection } from '../components/master-data/OverviewSection';
 import { ClassesSection } from '../components/master-data/ClassesSection';
@@ -24,19 +24,15 @@ export const MasterData = () => {
 
   const renderContent = () => {
     switch (activeTab) {
-      case 'overview': return <OverviewSection onNavigateToTab={(id) => setActiveTab(id as TabId)} />;
+      case 'overview': return <OverviewSection onNavigateToTab={(id: any) => setActiveTab(id as TabId)} />;
       case 'classes': return <ClassesSection />;
       case 'students': return <StudentsSection />;
       case 'teachers': return <TeachersSection />;
       case 'subjects': return <SubjectsSection />;
-      default: return <OverviewSection onNavigateToTab={(id) => setActiveTab(id as TabId)} />;
+      default: return <OverviewSection onNavigateToTab={(id: any) => setActiveTab(id as TabId)} />;
     }
   };
 
-  const getPageTitle = () => {
-    const active = tabs.find(t => t.id === activeTab);
-    return active ? active.label : 'Danh mục';
-  };
 
   return (
     <div className="space-y-8 pb-24">

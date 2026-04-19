@@ -15,7 +15,11 @@ import { SubjectForm } from './forms/SubjectForm';
 
 type ModalType = 'class' | 'student' | 'teacher' | 'subject' | null;
 
-export const OverviewSection = () => {
+interface OverviewSectionProps {
+  onNavigateToTab?: (id: 'classes' | 'students' | 'teachers' | 'subjects') => void;
+}
+
+export const OverviewSection = ({ onNavigateToTab }: OverviewSectionProps) => {
   const [modalType, setModalType] = useState<ModalType>(null);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [initialData, setInitialData] = useState<any>(null);

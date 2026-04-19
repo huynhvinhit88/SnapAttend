@@ -1,12 +1,11 @@
-import React, { useState, useRef, useMemo } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
-import { Plus, Trash2, Search, Camera, Upload, Pencil, Users, School } from 'lucide-react';
+import { Plus, Trash2, Search, Pencil, Users } from 'lucide-react';
 import { db } from '../../db/db';
 import { Button } from '../ui/Button';
 import { Card } from '../ui/Card';
 import { Input } from '../ui/Input';
 import { Modal } from '../ui/Modal';
-import { imageService } from '../../services/image.service';
 import { motion } from 'framer-motion';
 import { useFilter } from '../../context/FilterContext';
 

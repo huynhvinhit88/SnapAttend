@@ -123,7 +123,7 @@ export const TeacherForm: React.FC<TeacherFormProps> = ({
         <Button type="button" variant="secondary" className="flex-1 h-12 rounded-2xl" onClick={onCancel}>
           Hủy
         </Button>
-        <Button type="submit" className="flex-1 h-12 rounded-2xl shadow-lg shadow-primary/20" loading={isSubmitting}>
+        <Button type="submit" className="flex-1 h-12 rounded-2xl shadow-lg shadow-primary/20" isLoading={isSubmitting}>
           {editingId ? "Cập Nhật" : "Lưu Giáo Viên"}
         </Button>
       </div>

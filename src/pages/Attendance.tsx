@@ -40,7 +40,7 @@ export const Attendance = ({ sessionId, onBack }: AttendanceProps) => {
       if (status === 'present') nextStatus = 'late';
       else if (status === 'late') nextStatus = 'absent_cp';
       else if (status === 'absent_cp') nextStatus = 'absent_kp';
-      else if (status === 'absent_kp' || status === 'absent') nextStatus = 'present';
+      else if (status === 'absent_kp') nextStatus = 'present';
     }
 
     triggerHaptic(nextStatus === 'present' ? [30] : nextStatus === 'late' ? [15, 10, 15] : [50]);
@@ -60,7 +60,7 @@ export const Attendance = ({ sessionId, onBack }: AttendanceProps) => {
   const stats = {
     late: records?.filter(r => r.status === 'late').length || 0,
     absent_cp: records?.filter(r => r.status === 'absent_cp').length || 0,
-    absent_kp: records?.filter(r => (r.status as any) === 'absent_kp' || r.status === 'absent').length || 0,
+    absent_kp: records?.filter(r => r.status === 'absent_kp').length || 0,
     total: enrolledStudents.length,
     // Present = Tổng - (Vắng CP + Vắng KP + Muộn)
     get present() { return this.total - this.late - this.absent_cp - this.absent_kp }
@@ -121,7 +121,7 @@ export const Attendance = ({ sessionId, onBack }: AttendanceProps) => {
                 status === 'present' && "bg-green-500/20 border-green-500/50 shadow-[0_0_15px_rgba(34,197,94,0.1)]",
                 status === 'late' && "bg-yellow-500/20 border-yellow-500/50 shadow-[0_0_15px_rgba(234,179,8,0.1)]",
                 status === 'absent_cp' && "bg-orange-500/10 border-orange-500/40 shadow-[0_0_15px_rgba(249,115,22,0.05)]",
-                (status === 'absent_kp' || (status as any) === 'absent') && "bg-red-500/20 border-red-500/50 shadow-[0_0_15px_rgba(239,68,68,0.2)]"
+                status === 'absent_kp' && "bg-red-500/20 border-red-500/50 shadow-[0_0_15px_rgba(239,68,68,0.2)]"
               )}>
                 <div className="relative mb-3">
                   {student?.avatar ? (
@@ -145,7 +145,7 @@ export const Attendance = ({ sessionId, onBack }: AttendanceProps) => {
                           <span className="absolute -top-1 -right-1 bg-orange-500 text-[8px] text-white px-1 rounded-full font-black">P</span>
                         </div>
                       )}
-                      {(status === 'absent_kp' || (status as any) === 'absent') && <XCircle className="w-6 h-6 text-red-600 fill-background" />}
+                      {status === 'absent_kp' && <XCircle className="w-6 h-6 text-red-600 fill-background" />}
                     </motion.div>
                   </AnimatePresence>
                 </div>

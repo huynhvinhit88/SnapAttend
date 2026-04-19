@@ -15,6 +15,7 @@ interface GoogleConfig {
 class GoogleDriveService {
   private accessToken: string | null = null;
   private tokenClient: any = null;
+  private lastRedirectResult: { token: string; state: string | null } | null = null;
   constructor() {
     this.loadScripts();
   }
@@ -83,7 +84,7 @@ class GoogleDriveService {
       try {
         this.tokenClient = window.google.accounts.oauth2.initTokenClient({
           client_id: config.clientId,
-          scope: 'https://www.googleapis.com/auth/drive.file',
+          scope: 'https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/drive.metadata.readonly',
           callback: (response: any) => {
             if (response.error !== undefined) {
               reject(response);
@@ -260,7 +261,7 @@ class GoogleDriveService {
     const config = await this.getConfig();
     // Luôn sử dụng Origin (địa chỉ gốc) kèm dấu gạch chéo cuối để khớp với cấu hình của bạn
     const redirectUri = window.location.origin + '/';
-    const scope = 'https://www.googleapis.com/auth/drive.file';
+    const scope = 'https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/drive.metadata.readonly';
     
     const params = new URLSearchParams({
       client_id: config.clientId.trim(),
@@ -286,10 +287,20 @@ class GoogleDriveService {
       this.accessToken = token;
       // Clear hash from URL for clean look
       window.history.replaceState({}, document.title, window.location.pathname + window.location.search);
-      return { token, state };
+      const result = { token, state };
+      this.lastRedirectResult = result;
+      return result;
     }
     
     return null;
+  }
+
+  getLastRedirectResult(): { token: string; state: string | null } | null {
+    return this.lastRedirectResult;
+  }
+
+  clearLastRedirectResult() {
+    this.lastRedirectResult = null;
   }
 
   setAccessToken(token: string) {

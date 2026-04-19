@@ -285,7 +285,7 @@ export const DataManagement = () => {
 
   useEffect(() => {
     // Nếu vừa quay lại từ Google Login và đã có kết nối, tự động vào tab Cloud
-    const result = googleDriveService.handleRedirectCallback();
+    const result = googleDriveService.handleRedirectCallback() || googleDriveService.getLastRedirectResult();
     
     if (googleDriveService.isConnected()) {
       setActiveTab('cloud');
@@ -293,6 +293,8 @@ export const DataManagement = () => {
       // Nếu quay lại từ luồng chọn thư mục, tự động mở picker
       if (result?.state === 'pick_folder') {
         setIsCustomPickerOpen(true);
+        // Clear kết quả để không mở lại khi re-render
+        googleDriveService.clearLastRedirectResult();
       }
     }
     

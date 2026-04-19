@@ -522,7 +522,7 @@ export const DataManagement = () => {
     setIsProcessing(true);
     try {
       // Xác định bảng cần tham gia transaction
-      const tables = [selectedCategory];
+      const tables: any[] = [selectedCategory];
       if (['classes', 'students', 'sections'].includes(selectedCategory)) {
         tables.push('academicYears');
       }

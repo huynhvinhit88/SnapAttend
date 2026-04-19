@@ -16,7 +16,6 @@ class GoogleDriveService {
   private accessToken: string | null = null;
   private tokenClient: any = null;
   private lastRedirectResult: { token: string; state: string | null } | null = null;
-  private isInitialized: boolean = false;
   constructor() {
     this.loadScripts();
   }
@@ -91,7 +90,9 @@ class GoogleDriveService {
               reject(response);
             }
             this.accessToken = response.access_token;
-            this.persistToken(this.accessToken, response.expires_in || 3600);
+            if (this.accessToken) {
+              this.persistToken(this.accessToken, response.expires_in || 3600);
+            }
             resolve(response.access_token);
           },
         });

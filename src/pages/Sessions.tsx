@@ -12,7 +12,7 @@ import { Modal } from '../components/ui/Modal';
 import { motion } from 'framer-motion';
 import { useFilter } from '../context/FilterContext';
 import { PageHeader } from '../components/ui/PageHeader';
-import { addWeeks, format } from 'date-fns';
+import { addDays, addWeeks, format, getDay, parseISO } from 'date-fns';
 import { clsx } from 'clsx';
 
 interface SessionsProps {
@@ -37,8 +37,28 @@ export const Sessions = ({ onStartAttendance }: SessionsProps) => {
     startDate: format(new Date(), 'yyyy-MM-dd'),
     startTime: '07:00',
     endTime: '09:00',
-    weeks: 10
+    weeks: 10,
+    daysOfWeek: [getDay(new Date())] // Mặc định là thứ hiện tại
   });
+
+  const DAY_OPTIONS = [
+    { value: 1, label: 'T2' },
+    { value: 2, label: 'T3' },
+    { value: 3, label: 'T4' },
+    { value: 4, label: 'T5' },
+    { value: 5, label: 'T6' },
+    { value: 6, label: 'T7' },
+    { value: 0, label: 'CN' },
+  ];
+
+  const toggleDay = (day: number) => {
+    setRecurringData(prev => ({
+      ...prev,
+      daysOfWeek: prev.daysOfWeek.includes(day)
+        ? prev.daysOfWeek.filter(d => d !== day)
+        : [...prev.daysOfWeek, day].sort()
+    }));
+  };
 
   const sessions = useLiveQuery(() => db.sessions.toArray());
   const sections = useLiveQuery(() => db.sections.toArray());
@@ -84,24 +104,40 @@ export const Sessions = ({ onStartAttendance }: SessionsProps) => {
     if (!recurringData.sectionId) return alert('Vui lòng chọn lớp học phần');
 
     try {
-      const start = new Date(recurringData.startDate);
+      if (recurringData.daysOfWeek.length === 0) {
+        return alert('Vui lòng chọn ít nhất một thứ trong tuần');
+      }
+
+      const start = parseISO(recurringData.startDate);
       const newSessions: any[] = [];
 
-      for (let i = 0; i < recurringData.weeks; i++) {
-        const currentDate = addWeeks(start, i);
-        newSessions.push({
-          sectionId: parseInt(recurringData.sectionId),
-          date: format(currentDate, 'yyyy-MM-dd'),
-          startTime: recurringData.startTime,
-          endTime: recurringData.endTime,
-          status: 'pending' as const,
-          createdAt: Date.now()
-        });
+      for (const dayOfWeek of recurringData.daysOfWeek) {
+        let firstOccurrence = start;
+        // Tìm ngày đầu tiên tương ứng với dayOfWeek tính từ start trở đi
+        while (getDay(firstOccurrence) !== dayOfWeek) {
+          firstOccurrence = addDays(firstOccurrence, 1);
+        }
+        
+        // Tạo ca học cho X tuần tiếp theo
+        for (let i = 0; i < recurringData.weeks; i++) {
+          const sessionDate = addWeeks(firstOccurrence, i);
+          newSessions.push({
+            sectionId: parseInt(recurringData.sectionId),
+            date: format(sessionDate, 'yyyy-MM-dd'),
+            startTime: recurringData.startTime,
+            endTime: recurringData.endTime,
+            status: 'pending' as const,
+            createdAt: Date.now()
+          });
+        }
       }
+
+      // Sắp xếp theo ngày để hiển thị mượt mà hơn (tùy chọn)
+      newSessions.sort((a, b) => a.date.localeCompare(b.date));
 
       await db.sessions.bulkAdd(newSessions);
       setIsRecurringModalOpen(false);
-      alert(`Đã tạo thành công ${recurringData.weeks} ca học cho môn này!`);
+      alert(`Đã tạo thành công ${newSessions.length} ca học!`);
     } catch (error) {
       console.error('Lỗi tạo lịch định kỳ:', error);
     }
@@ -320,9 +356,32 @@ export const Sessions = ({ onStartAttendance }: SessionsProps) => {
             value={recurringData.sectionId}
             onChange={e => setRecurringData({...recurringData, sectionId: e.target.value})}
           />
+          <div className="space-y-3">
+            <label className="label-text">Chọn các thứ trong tuần</label>
+            <div className="flex flex-wrap gap-2">
+              {DAY_OPTIONS.map((day) => {
+                const isActive = recurringData.daysOfWeek.includes(day.value);
+                return (
+                  <button
+                    key={day.value}
+                    type="button"
+                    onClick={() => toggleDay(day.value)}
+                    className={clsx(
+                      "w-11 h-11 rounded-xl text-xs font-black transition-all flex items-center justify-center border-2",
+                      isActive 
+                        ? "bg-primary border-primary text-white shadow-lg shadow-primary/30 scale-105" 
+                        : "bg-primary/5 border-transparent text-foreground/40 hover:bg-primary/10 hover:text-primary/70"
+                    )}
+                  >
+                    {day.label}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
           <div className="grid grid-cols-2 gap-4">
             <Input label="Ngày bắt đầu" type="date" value={recurringData.startDate} onChange={e => setRecurringData({...recurringData, startDate: e.target.value})} />
-            <Input label="Số tuần lặp lại" type="number" value={recurringData.weeks} onChange={e => setRecurringData({...recurringData, weeks: parseInt(e.target.value)})} />
+            <Input label="Số tuần lặp lại" type="number" value={recurringData.weeks} onChange={e => setRecurringData({...recurringData, weeks: parseInt(e.target.value) || 0})} />
           </div>
           <div className="grid grid-cols-2 gap-4">
             <Input label="Giờ vào" type="time" value={recurringData.startTime} onChange={e => setRecurringData({...recurringData, startTime: e.target.value})} />

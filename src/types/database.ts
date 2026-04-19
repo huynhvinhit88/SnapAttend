@@ -21,7 +21,6 @@ export interface Teacher {
   name: string;
   teacherCode: string;
   department?: string;
-  phone?: string;
   avatar?: string;
   createdAt: number;
 }

@@ -20,7 +20,6 @@ export const TeacherForm: React.FC<TeacherFormProps> = ({
   const [formData, setFormData] = useState({
     name: '',
     teacherCode: '',
-    phone: '',
     department: initialDepartment || '',
     avatar: '' as string | undefined
   });
@@ -36,7 +35,6 @@ export const TeacherForm: React.FC<TeacherFormProps> = ({
           setFormData({
             name: teacher.name,
             teacherCode: teacher.teacherCode,
-            phone: teacher.phone || '',
             department: teacher.department || '',
             avatar: teacher.avatar
           });
@@ -64,7 +62,6 @@ export const TeacherForm: React.FC<TeacherFormProps> = ({
       const data = {
         name: formData.name.trim(),
         teacherCode: formData.teacherCode.trim(),
-        phone: formData.phone.trim(),
         department: formData.department.trim(),
         avatar: formData.avatar
       };
@@ -114,12 +111,6 @@ export const TeacherForm: React.FC<TeacherFormProps> = ({
         ]}
         value={formData.department}
         onChange={(e) => setFormData({...formData, department: e.target.value})}
-      />
-      <Input 
-        label="Số điện thoại" 
-        placeholder="VD: 0912345678"
-        value={formData.phone}
-        onChange={(e) => setFormData({...formData, phone: e.target.value})}
       />
       
       <div className="flex gap-3 pt-6">

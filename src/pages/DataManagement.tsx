@@ -410,7 +410,6 @@ export const DataManagement = () => {
                 teacherCode: code,
                 name: name.toString(),
                 department: (row['Khoa/Bộ môn'] || row['department'])?.toString(),
-                phone: (row['Số điện thoại'] || row['phone'])?.toString(),
                 createdAt: Date.now()
               };
               if (dbTeachers?.some(t => t.teacherCode === code)) {
@@ -596,7 +595,7 @@ export const DataManagement = () => {
       const CATEGORY_HEADERS: Record<Category, string[]> = {
         classes: ['Tên lớp', 'Khối đào tạo', 'Chuyên ngành', 'Năm học'],
         students: ['Mã học sinh', 'Họ và tên', 'Tên lớp', 'Niên khóa'],
-        teachers: ['Mã giáo viên', 'Họ và tên', 'Khoa/Bộ môn', 'Số điện thoại'],
+        teachers: ['Mã giáo viên', 'Họ và tên', 'Khoa/Bộ môn'],
         subjects: ['Mã môn học', 'Tên môn học', 'Số tín chỉ'],
         sections: ['Tên lớp HP', 'Tên môn học', 'Tên giáo viên', 'Học kỳ', 'Năm học'],
         sessions: ['Tên lớp HP', 'Ngày', 'Giờ bắt đầu', 'Giờ kết thúc']
@@ -616,7 +615,7 @@ export const DataManagement = () => {
             break;
           case 'teachers': 
             rows = data.map((d: any) => [
-              d.teacherCode, d.name, d.department || '', d.phone || ''
+              d.teacherCode, d.name, d.department || ''
             ]); 
             break;
           case 'subjects': rows = data.map((d: any) => [d.code, d.name, d.credits]); break;

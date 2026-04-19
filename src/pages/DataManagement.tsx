@@ -17,6 +17,7 @@ import { PageHeader } from '../components/ui/PageHeader';
 import { Modal } from '../components/ui/Modal';
 import { googleDriveService } from '../services/googleDrive.service';
 import { backupService } from '../services/backup.service';
+import { DriveFolderPicker } from '../components/master-data/DriveFolderPicker';
 
 type Category = 'classes' | 'students' | 'teachers' | 'subjects' | 'sections' | 'sessions';
 
@@ -60,6 +61,7 @@ export const DataManagement = () => {
   const [isSyncing, setIsSyncing] = useState(false);
   const [isConnected, setIsConnected] = useState(googleDriveService.isConnected());
   const [isCloudPickerOpen, setIsCloudPickerOpen] = useState(false);
+  const [isCustomPickerOpen, setIsCustomPickerOpen] = useState(false);
   const [folderName, setFolderName] = useState<string | null>(null);
 
   // Lấy dữ liệu từ DB để validation
@@ -165,7 +167,8 @@ export const DataManagement = () => {
 
     if (isPWA || isMobile) {
       // Sử dụng Redirect Flow cho PWA/Mobile để tránh bị chặn popup
-      const authUrl = await googleDriveService.getAuthRedirectUrl('cloud');
+      // Truyền state='pick_folder' để biết cần mở picker sau khi quay lại
+      const authUrl = await googleDriveService.getAuthRedirectUrl('pick_folder');
       window.location.href = authUrl;
       return false; // Sẽ redirect nên không chạy tiếp
     } else {
@@ -184,31 +187,45 @@ export const DataManagement = () => {
 
   const handleConnectDrive = async () => {
     setIsSyncing(true);
-    const authenticated = await ensureAuthenticated();
-    if (authenticated) {
-      try {
-        const { name } = await googleDriveService.pickFolder();
-        setFolderName(name);
-        setIsConnected(true);
-        fetchCloudFiles();
-      } catch (err) {
-        console.error('Lỗi chọn thư mục:', err);
+    const isMobile = /Android|iPhone|iPad/i.test(navigator.userAgent);
+    
+    if (isMobile) {
+      const authenticated = await ensureAuthenticated();
+      if (authenticated) {
+        setIsCustomPickerOpen(true);
+      }
+    } else {
+      const authenticated = await ensureAuthenticated();
+      if (authenticated) {
+        try {
+          const { name } = await googleDriveService.pickFolder();
+          setFolderName(name);
+          setIsConnected(true);
+          fetchCloudFiles();
+        } catch (err) {
+          console.error('Lỗi chọn thư mục:', err);
+        }
       }
     }
     setIsSyncing(false);
   };
 
   const handleChangeFolder = async () => {
-    try {
-      setIsSyncing(true);
-      const { name } = await googleDriveService.pickFolder();
-      setFolderName(name);
-      fetchCloudFiles();
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setIsSyncing(false);
+    setIsSyncing(true);
+    const isMobile = /Android|iPhone|iPad/i.test(navigator.userAgent);
+    
+    if (isMobile) {
+      setIsCustomPickerOpen(true);
+    } else {
+      try {
+        const { name } = await googleDriveService.pickFolder();
+        setFolderName(name);
+        fetchCloudFiles();
+      } catch (err) {
+        console.error(err);
+      }
     }
+    setIsSyncing(false);
   };
 
   const handleDisconnectDrive = async () => {
@@ -268,9 +285,17 @@ export const DataManagement = () => {
 
   useEffect(() => {
     // Nếu vừa quay lại từ Google Login và đã có kết nối, tự động vào tab Cloud
+    const result = googleDriveService.handleRedirectCallback();
+    
     if (googleDriveService.isConnected()) {
       setActiveTab('cloud');
+      
+      // Nếu quay lại từ luồng chọn thư mục, tự động mở picker
+      if (result?.state === 'pick_folder') {
+        setIsCustomPickerOpen(true);
+      }
     }
+    
     // Fetch folder name ngay lập tức nếu đã kết nối
     const initFolder = async () => {
       if (googleDriveService.isConnected()) {
@@ -1178,6 +1203,22 @@ export const DataManagement = () => {
           </motion.div>
         )}
       </AnimatePresence>
+
+      <Modal
+        isOpen={isCustomPickerOpen}
+        onClose={() => setIsCustomPickerOpen(false)}
+        title="Chọn thư mục sao lưu"
+      >
+        <DriveFolderPicker
+          onSelect={(folder) => {
+            setFolderName(folder.name);
+            setIsCustomPickerOpen(false);
+            setIsConnected(true);
+            fetchCloudFiles();
+          }}
+          onCancel={() => setIsCustomPickerOpen(false)}
+        />
+      </Modal>
 
       <AnimatePresence>
         {isProcessing && (

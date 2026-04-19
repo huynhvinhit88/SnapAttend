@@ -215,6 +215,31 @@ class GoogleDriveService {
     return data.files || [];
   }
 
+  async listFolders(parentId?: string): Promise<any[]> {
+    if (!this.accessToken) await this.authenticate();
+
+    let query = `mimeType = 'application/vnd.google-apps.folder' and trashed = false`;
+    if (parentId) {
+      query += ` and '${parentId}' in parents`;
+    } else {
+      query += ` and 'root' in parents`;
+    }
+
+    const response = await fetch(`https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(query)}&fields=files(id,name,createdTime)&orderBy=name`, {
+      headers: {
+        'Authorization': `Bearer ${this.accessToken}`
+      }
+    });
+
+    if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error?.message || 'Lỗi lấy danh sách thư mục');
+    }
+
+    const data = await response.json();
+    return data.files || [];
+  }
+
   async downloadFile(fileId: string): Promise<ArrayBuffer> {
     if (!this.accessToken) await this.authenticate();
 
@@ -249,18 +274,19 @@ class GoogleDriveService {
     return `https://accounts.google.com/o/oauth2/v2/auth?${params.toString()}`;
   }
 
-  handleRedirectCallback(): string | null {
+  handleRedirectCallback(): { token: string; state: string | null } | null {
     const hash = window.location.hash;
     if (!hash) return null;
 
     const params = new URLSearchParams(hash.substring(1));
     const token = params.get('access_token');
+    const state = params.get('state');
     
     if (token) {
       this.accessToken = token;
       // Clear hash from URL for clean look
       window.history.replaceState({}, document.title, window.location.pathname + window.location.search);
-      return token;
+      return { token, state };
     }
     
     return null;

@@ -32,9 +32,11 @@ function SnapAttendApp() {
 
   // Global Google Redirect Handler
   useEffect(() => {
-    const token = googleDriveService.handleRedirectCallback();
-    if (token) {
-      setActivePage('data');
+    const result = googleDriveService.handleRedirectCallback();
+    if (result?.token) {
+      if (result.state === 'pick_folder' || result.state === 'cloud') {
+        setActivePage('data');
+      }
     }
   }, []);
 

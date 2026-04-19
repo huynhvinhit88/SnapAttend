@@ -239,7 +239,7 @@ export const Sessions = ({ onStartAttendance }: SessionsProps) => {
           />
         </div>
 
-        <div className="relative z-10">
+        <div className="relative z-10 w-full max-w-[200px]">
           <Input 
             label="Ngày diễn ra" 
             type="date"

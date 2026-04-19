@@ -317,7 +317,7 @@ export const Reports = () => {
             onChange={e => setFilter({...filter, sectionId: e.target.value})}
           />
         </div>
-        <div className="flex-1 w-full md:max-w-[200px] relative z-10">
+        <div className="w-full max-w-[200px] relative z-10">
           <Input 
             label="Ngày diễn ra" 
             type="date"

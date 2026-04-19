@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Folder, ChevronRight, ChevronLeft, Check, Loader2, Search } from 'lucide-react';
+import { Folder, ChevronRight, Check, Loader2, Search } from 'lucide-react';
 import { Button } from '../ui/Button';
 import { googleDriveService } from '../../services/googleDrive.service';
 import { clsx } from 'clsx';
@@ -46,12 +46,6 @@ export const DriveFolderPicker: React.FC<DriveFolderPickerProps> = ({ onSelect, 
     setSearchTerm('');
   };
 
-  const navigateBack = () => {
-    if (path.length > 0) {
-      setPath(path.slice(0, -1));
-      setSearchTerm('');
-    }
-  };
 
   const handleSelectCurrent = () => {
     if (currentFolder.id === 'root') {

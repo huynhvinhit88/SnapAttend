@@ -61,6 +61,7 @@ export const TeacherForm: React.FC<TeacherFormProps> = ({
 
     setIsSubmitting(true);
     try {
+      const data = {
         name: formData.name.trim(),
         teacherCode: formData.teacherCode.trim(),
         phone: formData.phone.trim(),

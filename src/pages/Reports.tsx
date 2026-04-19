@@ -317,9 +317,9 @@ export const Reports = () => {
             onChange={e => setFilter({...filter, sectionId: e.target.value})}
           />
         </div>
-        <div className="flex-1 w-full relative z-10">
+        <div className="flex-1 w-full md:max-w-[200px] relative z-10">
           <Input 
-            label="Ngày diễn ra ca học" 
+            label="Ngày diễn ra" 
             type="date"
             icon={<Calendar className="w-4 h-4" />}
             value={filter.date} 

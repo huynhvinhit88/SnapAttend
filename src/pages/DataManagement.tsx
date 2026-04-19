@@ -598,7 +598,7 @@ export const DataManagement = () => {
         teachers: ['Mã giáo viên', 'Họ và tên', 'Khoa/Bộ môn'],
         subjects: ['Mã môn học', 'Tên môn học', 'Số tín chỉ'],
         sections: ['Tên lớp HP', 'Tên môn học', 'Tên giáo viên', 'Học kỳ', 'Năm học'],
-        sessions: ['Tên lớp HP', 'Ngày', 'Giờ bắt đầu', 'Giờ kết thúc']
+        sessions: ['Tên lớp HP', 'Môn học', 'Giáo viên phụ trách', 'Học kỳ', 'Năm học', 'Ngày', 'Giờ bắt đầu', 'Giờ kết thúc']
       };
 
       for (const category of Array.from(exportSelection)) {
@@ -625,9 +625,22 @@ export const DataManagement = () => {
             ]);
             break;
           case 'sessions':
-            rows = data.map((d: any) => [
-              dbSections?.find(s => s.id === d.sectionId)?.name || 'N/A', d.date, d.startTime, d.endTime
-            ]);
+            rows = data.map((d: any) => {
+              const section = dbSections?.find(s => s.id === d.sectionId);
+              const subject = dbSubjects?.find(s => s.id === section?.subjectId);
+              const teacher = dbTeachers?.find(t => t.id === section?.teacherId);
+              
+              return [
+                section?.name || 'N/A', 
+                subject?.name || 'N/A', 
+                teacher?.name || 'N/A', 
+                section?.semester || 'N/A', 
+                section?.schoolYear || 'N/A',
+                d.date, 
+                d.startTime, 
+                d.endTime
+              ];
+            });
             break;
         }
 

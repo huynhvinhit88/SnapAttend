@@ -1169,6 +1169,10 @@ export const DataManagement = () => {
                 <p className="text-xs text-foreground/40 leading-relaxed">
                   Gỡ bỏ toàn bộ lớp học, học sinh, lớp HP và điểm danh thuộc một năm học cụ thể.
                 </p>
+                <p className="text-[10px] text-red-500/60 font-medium bg-red-500/5 p-2 rounded-lg border border-red-500/10 mt-2">
+                  <AlertTriangle className="w-3 h-3 inline mr-1" />
+                  Ghi chú: Hãy sao lưu dữ liệu (Tab Đám mây hoặc Xuất Excel) trước khi xóa.
+                </p>
               </div>
 
               <div className="flex gap-2">
@@ -1197,6 +1201,10 @@ export const DataManagement = () => {
                 <p className="font-bold text-foreground">Xóa toàn bộ dữ liệu</p>
                 <p className="text-xs text-foreground/40 leading-relaxed">
                   Thao tác này sẽ dọn dẹp sạch sẽ mọi thông tin trong ứng dụng. Hãy cân nhắc kỹ trước khi thực hiện.
+                </p>
+                <p className="text-[10px] text-red-500/60 font-medium bg-red-500/5 p-2 rounded-lg border border-red-500/10 mt-2">
+                  <AlertTriangle className="w-3 h-3 inline mr-1" />
+                  Ghi chú: Hãy sao lưu dữ liệu để đảm bảo an toàn thông tin trước khi xóa.
                 </p>
               </div>
 

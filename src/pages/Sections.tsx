@@ -1,24 +1,22 @@
 import React, { useState, useMemo } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
-import { 
-  Plus, Database, Trash2, Search, UserPlus, 
-  Users, Pencil, Layers 
-} from 'lucide-react';
+import { useFilter } from '../context/FilterContext';
+import { PageHeader } from '../components/ui/PageHeader';
+import { BookOpen, Layers, Plus, Pencil, Users, UserPlus, Trash2, Search } from 'lucide-react';
 import { db } from '../db/db';
 import { Button } from '../components/ui/Button';
 import { Card } from '../components/ui/Card';
 import { Input } from '../components/ui/Input';
 import { Modal } from '../components/ui/Modal';
 import { motion } from 'framer-motion';
-import { useFilter } from '../context/FilterContext';
-import { PageHeader } from '../components/ui/PageHeader';
-import { BookOpen } from 'lucide-react';
+import { SectionForm } from '../components/master-data/forms/SectionForm';
 
 export const Sections = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isMapModalOpen, setIsMapModalOpen] = useState(false);
   const [isViewStudentsModalOpen, setIsViewStudentsModalOpen] = useState(false);
   const [selectedSectionId, setSelectedSectionId] = useState<number | null>(null);
+  const [initialSubjectId, setInitialSubjectId] = useState<number | null>(null);
   
   const { filters, updateFilter } = useFilter();
   const { searchTerm } = filters.sections;
@@ -27,110 +25,30 @@ export const Sections = () => {
 
   const sections = useLiveQuery(() => db.sections.toArray());
   const sectionCount = useLiveQuery(() => db.sections.count());
-  const subjectCount = useLiveQuery(() => db.subjects.count());
   const subjects = useLiveQuery(() => db.subjects.toArray());
+  const subjectCount = useLiveQuery(() => db.subjects.count());
   const teachers = useLiveQuery(() => db.teachers.toArray());
   const students = useLiveQuery(() => db.students.toArray());
   const enrollments = useLiveQuery(() => db.enrollments.toArray());
   const classes = useLiveQuery(() => db.classes.toArray());
   const academicYears = useLiveQuery(() => db.academicYears.toArray());
   
-  const defaultYear = useMemo(() => academicYears?.find(y => y.isDefault)?.name || `${new Date().getFullYear()}-${new Date().getFullYear() + 1}`, [academicYears]);
-
-  const [formData, setFormData] = useState({
-    name: '',
-    subjectId: '',
-    teacherId: '',
-    semester: 'Học kỳ 1',
-    schoolYear: ''
-  });
-  const [errors, setErrors] = useState<Record<string, string>>({});
-
-  // Cập nhật schoolYear khi defaultYear có giá trị và đang ở chế độ thêm mới
-  React.useEffect(() => {
-    if (defaultYear && !editingId && !formData.schoolYear) {
-      setFormData(prev => ({ ...prev, schoolYear: defaultYear }));
-    }
-  }, [defaultYear, editingId]);
-
   const [yearFilter, setYearFilter] = useState('');
 
-  const handleAddSection = async (e: React.FormEvent) => {
-    e.preventDefault();
-    const newErrors: Record<string, string> = {};
-    
-    if (!formData.name.trim()) newErrors.name = 'Vui lòng nhập tên lớp học phần';
-    if (!formData.subjectId) newErrors.subjectId = 'Vui lòng chọn môn học';
-    if (!formData.teacherId) newErrors.teacherId = 'Vui lòng chọn giáo viên';
-
-    if (Object.keys(newErrors).length > 0) {
-      setErrors(newErrors);
-      return;
-    }
-    
-    try {
-      const data = {
-        name: formData.name.trim(),
-        subjectId: parseInt(formData.subjectId),
-        teacherId: parseInt(formData.teacherId),
-        semester: formData.semester,
-        schoolYear: formData.schoolYear,
-      };
-
-      if (editingId) {
-        await db.sections.update(editingId, data);
-      } else {
-        await db.sections.add({
-          ...data,
-          createdAt: Date.now()
-        });
-      }
-
-      setFormData({ 
-        name: '', 
-        subjectId: '', 
-        teacherId: '', 
-        semester: 'Học kỳ 1', 
-        schoolYear: defaultYear 
-      });
-      setErrors({});
-      setEditingId(null);
-      setIsModalOpen(false);
-    } catch (error) {
-      console.error('Lỗi lưu lớp học tập:', error);
-      alert('Không thể lưu lớp học phần. Vui lòng thử lại!');
-    }
-  };
-
-  const handleEditSection = (section: any) => {
-    setFormData({
-      name: section.name,
-      subjectId: section.subjectId.toString(),
-      teacherId: section.teacherId.toString(),
-      semester: section.semester,
-      schoolYear: section.schoolYear,
-    });
-    setEditingId(section.id);
+  const handleEditSection = (id: number) => {
+    setEditingId(id);
     setIsModalOpen(true);
   };
 
   const handleMapStudents = async (studentIds: number[]) => {
     if (!selectedSectionId) return;
-    
-    // Thêm những học sinh chưa có trong danh sách ghi danh
     const existingEnrollments = enrollments?.filter(e => e.sectionId === selectedSectionId) || [];
     const existingStudentIds = existingEnrollments.map(e => e.studentId);
-    
     const newStudentIds = studentIds.filter(id => !existingStudentIds.includes(id));
     
     if (newStudentIds.length === 0) return;
-
     for (const studentId of newStudentIds) {
-      await db.enrollments.add({
-        sectionId: selectedSectionId,
-        studentId,
-        createdAt: Date.now()
-      });
+      await db.enrollments.add({ sectionId: selectedSectionId, studentId, createdAt: Date.now() });
     }
   };
 
@@ -142,26 +60,44 @@ export const Sections = () => {
 
   const handleDeleteSection = async (id: number) => {
     if (confirm('Xóa lớp học phần này sẽ xóa toàn bộ danh sách điểm danh liên quan?')) {
-      await db.sections.delete(id);
-      await db.enrollments.where('sectionId').equals(id).delete();
+      await db.transaction('rw', [db.sections, db.enrollments], async () => {
+        await db.sections.delete(id);
+        await db.enrollments.where('sectionId').equals(id).delete();
+      });
     }
   };
 
-  const filteredSections = sections?.filter(s => 
-    s.name.toLowerCase().includes(searchTerm.toLowerCase()) &&
-    (!yearFilter || s.schoolYear === yearFilter)
-  );
+  const groupedData = useMemo(() => {
+    if (!subjects || !sections || !teachers) return [];
+    const searchLow = searchTerm.toLowerCase();
+    
+    return subjects.map(subject => {
+      const subjectSections = sections.filter(s => s.subjectId === subject.id);
+      const filteredSubSections = subjectSections.filter(s => {
+        const teacher = teachers.find(t => t.id === s.teacherId);
+        const matchesYear = !yearFilter || s.schoolYear === yearFilter;
+        const matchesSearch = 
+          s.name.toLowerCase().includes(searchLow) || 
+          subject.name.toLowerCase().includes(searchLow) ||
+          teacher?.name.toLowerCase().includes(searchLow);
+        return matchesYear && matchesSearch;
+      });
+
+      const isSubjectMatch = subject.name.toLowerCase().includes(searchLow);
+      if (filteredSubSections.length > 0 || (isSubjectMatch && !searchTerm)) {
+        return { subject, sections: filteredSubSections };
+      }
+      return null;
+    }).filter(item => item !== null) as { subject: any, sections: any[] }[];
+  }, [subjects, sections, teachers, searchTerm, yearFilter]);
 
   return (
     <div className="space-y-8 pb-20">
       <PageHeader
         title="Lớp học phần"
-        description="Quản lý nhóm học sinh đăng ký theo từng môn học và khóa đào tạo cụ thể."
-        icon={<Layers className="w-8 h-8" />}
-        breadcrumbs={[
-          { label: 'Trang chủ' },
-          { label: 'Đào tạo', active: true }
-        ]}
+        description="Quản lý nhóm học sinh đăng ký theo từng môn học và đào tạo cụ thể."
+        icon={<Layers className="w-8 h-8 text-primary" />}
+        breadcrumbs={[{ label: 'Trang chủ' }, { label: 'Đào tạo', active: true }]}
         stats={[
           { label: 'Tổng lớp HP', value: sectionCount || 0, icon: Layers },
           { label: 'Tổng số môn học', value: subjectCount || 0, icon: BookOpen, color: 'text-primary' },
@@ -169,11 +105,10 @@ export const Sections = () => {
       >
         <Button onClick={() => {
           setEditingId(null);
-          setFormData({ name: '', subjectId: '', teacherId: '', semester: 'Học kỳ 1', schoolYear: defaultYear });
-          setErrors({});
+          setInitialSubjectId(null);
           setIsModalOpen(true);
         }}>
-          <Plus className="w-5 h-5" />
+          <Plus className="w-5 h-5 mr-2" />
           Thêm Lớp HP
         </Button>
       </PageHeader>
@@ -183,12 +118,12 @@ export const Sections = () => {
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-foreground/30 group-focus-within:text-primary transition-colors" />
           <Input 
             className="pl-12 h-14 bg-background-light/50 backdrop-blur-xl border-foreground/10 focus:border-primary/50 shadow-inner" 
-            placeholder="Tìm kiếm theo tên lớp học phần hoặc mã môn..." 
+            placeholder="Tìm theo tên lớp, môn học hoặc giáo viên..." 
             value={searchTerm} 
             onChange={e => updateFilter('sections', { searchTerm: e.target.value })} 
           />
         </div>
-        <div className="w-full md:w-60">
+        <div className="w-full md:w-64">
           <Input 
             label="Lọc theo năm học"
             type="select"
@@ -199,137 +134,116 @@ export const Sections = () => {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {filteredSections?.map((item, index) => {
-          const subject = subjects?.find(s => s.id === item.subjectId);
-          const teacher = teachers?.find(t => t.id === item.teacherId);
-          
-          const sectionEnrollments = enrollments?.filter(e => e.sectionId === item.id) || [];
-          const studentCount = sectionEnrollments.filter(e => 
-            students?.some(s => s.id === e.studentId)
-          ).length;
-
-          return (
-            <motion.div key={item.id} initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: index * 0.05 }}>
-              <Card className="relative group overflow-hidden hover:border-primary/30 transition-all">
-                <div className="flex justify-between items-start mb-6">
-                  <div className="w-12 h-12 bg-primary/10 rounded-2xl flex items-center justify-center shadow-inner group-hover:scale-110 transition-transform">
-                    <Database className="w-6 h-6 text-primary" />
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        {groupedData.map((group, idx) => (
+          <motion.div
+            key={group.subject.id}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: idx * 0.05 }}
+          >
+            <Card className="h-full border-foreground/5 hover:border-primary/20 transition-all flex flex-col p-0 overflow-hidden">
+              <div className="p-6 bg-foreground/[0.02] border-b border-foreground/5 flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 bg-primary/10 rounded-2xl flex items-center justify-center text-primary font-bold">
+                    <BookOpen className="w-6 h-6" />
                   </div>
-                  <div className="flex gap-1.5 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity z-10">
-                    <Button variant="ghost" className="p-2 w-9 h-9 rounded-xl text-primary hover:bg-primary/10" title="Sửa" onClick={() => handleEditSection(item)}>
-                      <Pencil className="w-4.5 h-4.5" />
-                    </Button>
-                    <Button variant="ghost" className="p-2 w-9 h-9 rounded-xl text-primary hover:bg-primary/10" title="Xem danh sách" onClick={() => { setSelectedSectionId(item.id!); setIsViewStudentsModalOpen(true); }}>
-                      <Users className="w-4.5 h-4.5" />
-                    </Button>
-                    <Button variant="ghost" className="p-2 w-9 h-9 rounded-xl text-primary hover:bg-primary/10" title="Ghi danh" onClick={() => { setSelectedSectionId(item.id!); setIsMapModalOpen(true); }}>
-                      <UserPlus className="w-4.5 h-4.5" />
-                    </Button>
-                    <Button variant="ghost" className="p-2 w-9 h-9 rounded-xl text-red-500 hover:bg-red-500/10" title="Xóa" onClick={() => handleDeleteSection(item.id!)}>
-                      <Trash2 className="w-4.5 h-4.5" />
-                    </Button>
+                  <div>
+                    <h3 className="text-lg font-black text-foreground">{group.subject.name}</h3>
+                    <p className="text-[10px] text-foreground/30 font-black uppercase tracking-widest">
+                      {group.sections.length} Lớp học phần
+                    </p>
                   </div>
                 </div>
+                <Button 
+                  variant="ghost" 
+                  className="text-primary hover:bg-primary/10 px-3 h-10 rounded-xl font-bold text-xs"
+                  onClick={() => {
+                    setEditingId(null);
+                    setInitialSubjectId(group.subject.id);
+                    setIsModalOpen(true);
+                  }}
+                >
+                  <Plus className="w-4 h-4 mr-1.5" /> Thêm lớp học phần
+                </Button>
+              </div>
 
-                <h3 className="text-xl font-black text-foreground mb-1 mt-2">{item.name}</h3>
-                <p className="text-primary text-xs font-bold uppercase tracking-widest flex items-center gap-1.5">
-                  {subject?.name} <span className="text-foreground/20">•</span> {teacher?.name}
-                </p>
+              <div className="p-4 flex-1 space-y-3">
+                {group.sections.length > 0 ? (
+                  group.sections.map(section => {
+                    const teacher = teachers?.find(t => t.id === section.teacherId);
+                    const sectionEnrollments = enrollments?.filter(e => e.sectionId === section.id) || [];
+                    const stdCount = sectionEnrollments.length;
 
-                <div className="mt-8 pt-6 border-t border-foreground/5 flex items-center justify-between">
-                  <div className="flex items-center gap-2 bg-foreground/5 px-3 py-1.5 rounded-xl border border-foreground/5">
-                    <Users className="w-4 h-4 text-foreground/40" />
-                    <span className="text-xs font-black text-foreground/60 tracking-tight">{studentCount} Học sinh</span>
+                    return (
+                      <div key={section.id} className="p-4 rounded-2xl bg-foreground/[0.03] border border-foreground/5 group/item hover:bg-foreground/[0.05] transition-all">
+                        <div className="flex items-start justify-between">
+                          <div>
+                            <h4 className="font-bold text-foreground group-hover/item:text-primary transition-colors">{section.name}</h4>
+                            <div className="flex items-center gap-2 mt-1">
+                              <span className="text-[10px] text-foreground/40 font-black uppercase tracking-widest">{teacher?.name || 'Chưa phân công'}</span>
+                              <span className="w-1 h-1 rounded-full bg-foreground/10" />
+                              <span className="text-[10px] text-primary font-bold">{section.semester} • {section.schoolYear}</span>
+                            </div>
+                          </div>
+                          
+                          <div className="flex gap-1 items-center">
+                            <Button variant="ghost" className="p-2 w-8 h-8 rounded-lg text-primary hover:bg-primary/10" onClick={() => handleEditSection(section.id!)}>
+                              <Pencil className="w-4 h-4" />
+                            </Button>
+                            <Button variant="ghost" className="p-2 w-8 h-8 rounded-lg text-primary hover:bg-primary/10" onClick={() => { setSelectedSectionId(section.id!); setIsViewStudentsModalOpen(true); }}>
+                              <Users className="w-4 h-4" />
+                            </Button>
+                            <Button variant="ghost" className="p-2 w-8 h-8 rounded-lg text-primary hover:bg-primary/10" onClick={() => { setSelectedSectionId(section.id!); setIsMapModalOpen(true); }}>
+                              <UserPlus className="w-4 h-4" />
+                            </Button>
+                            <Button variant="ghost" className="p-2 w-8 h-8 rounded-lg text-red-500 hover:bg-red-500/10" onClick={() => handleDeleteSection(section.id!)}>
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          </div>
+                        </div>
+
+                        <div className="mt-4 flex items-center justify-between">
+                          <div className="flex items-center gap-1.5 text-[10px] font-black uppercase text-foreground/40 tracking-tighter">
+                            <Users className="w-3 h-3" />
+                            {stdCount} Học viên ghi danh
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })
+                ) : (
+                  <div className="py-10 text-center bg-foreground/[0.02] rounded-2xl border border-dashed border-foreground/5">
+                    <Layers className="w-10 h-10 text-foreground/5 mx-auto mb-2" />
+                    <p className="text-xs text-foreground/30 font-bold uppercase tracking-widest">Không có lớp học phần phù hợp</p>
                   </div>
-                  <div className="text-right">
-                    <p className="text-[10px] text-foreground/30 font-black uppercase tracking-widest">{item.semester}</p>
-                    <p className="text-[10px] text-primary font-bold">{item.schoolYear}</p>
-                  </div>
-                </div>
-                
-                <div className="absolute -bottom-10 -right-10 w-32 h-32 bg-primary/5 rounded-full blur-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-700" />
-              </Card>
-            </motion.div>
-          );
-        })}
+                )}
+              </div>
+            </Card>
+          </motion.div>
+        ))}
       </div>
 
-      {filteredSections?.length === 0 && (
+      {groupedData.length === 0 && (
         <div className="text-center py-24 px-4 bg-background-light/30 backdrop-blur-3xl rounded-[3rem] border border-dashed border-foreground/10">
           <Layers className="w-20 h-20 text-foreground/5 mx-auto mb-6" />
-          <p className="text-foreground/40 font-bold text-lg">Hệ thống chưa ghi nhận lớp học phần nào.</p>
-          <Button variant="ghost" className="mt-4 text-primary hover:bg-primary/5" onClick={() => setIsModalOpen(true)}>
-            <Plus className="w-4 h-4 mr-2" /> Tạo Lớp Bây Giờ
-          </Button>
+          <p className="text-foreground/40 font-bold text-lg">Hệ thống chưa ghi nhận hoặc không tìm thấy lớp học phần nào.</p>
         </div>
       )}
 
-      {/* Modal Tạo/Sửa Lớp Học Phần */}
       <Modal 
         isOpen={isModalOpen} 
         onClose={() => setIsModalOpen(false)} 
         title={editingId ? "Cập nhật Lớp Học Phần" : "Thiết lập Lớp Học Phần Mới"}
       >
-        <form noValidate onSubmit={handleAddSection} className="space-y-6 pt-4">
-          <Input 
-            label="Tên gợi nhớ (VD: Toán 10A1 - Thầy Nam)" 
-            value={formData.name} 
-            error={errors.name}
-            onChange={e => {
-              setFormData({...formData, name: e.target.value});
-              if (errors.name) setErrors({...errors, name: ''});
-            }} 
-          />
-          <Input 
-            label="Môn học giảng dạy" type="select" 
-            error={errors.subjectId}
-            options={[{ value: '', label: 'Chọn môn học...' }, ...(subjects?.map(s => ({ value: s.id!.toString(), label: s.name })) || [])]}
-            value={formData.subjectId} 
-            onChange={e => {
-              setFormData({...formData, subjectId: e.target.value, teacherId: ''});
-              if (errors.subjectId) setErrors({...errors, subjectId: ''});
-            }}
-          />
-          <Input 
-            label="Giáo viên phụ trách" type="select" 
-            error={errors.teacherId}
-            options={[
-              { value: '', label: 'Chọn giáo viên...' },
-              ...(teachers?.filter(t => {
-                const selectedSubject = subjects?.find(s => s.id === parseInt(formData.subjectId));
-                return !formData.subjectId || t.department === selectedSubject?.name;
-              }).map(t => ({ value: t.id!.toString(), label: t.name })) || [])
-            ]}
-            value={formData.teacherId} 
-            onChange={e => {
-              setFormData({...formData, teacherId: e.target.value});
-              if (errors.teacherId) setErrors({...errors, teacherId: ''});
-            }}
-          />
-          <div className="grid grid-cols-2 gap-4">
-            <Input label="Học kỳ" value={formData.semester} onChange={e => setFormData({...formData, semester: e.target.value})} />
-            <Input 
-              label="Năm học" 
-              type="select"
-              options={[
-                { value: '', label: 'Chọn năm học...' },
-                ...(academicYears?.map(y => ({ value: y.name, label: y.name })) || [])
-              ]}
-              value={formData.schoolYear} 
-              onChange={e => setFormData({...formData, schoolYear: e.target.value})} 
-            />
-          </div>
-          <div className="flex gap-4 pt-6">
-            <Button type="button" variant="secondary" className="flex-1 h-12 rounded-2xl" onClick={() => setIsModalOpen(false)}>Hủy</Button>
-            <Button type="submit" className="flex-1 h-12 rounded-2xl shadow-lg shadow-primary/20">
-              {editingId ? "Cập Nhật" : "Hoàn Tất Tạo Lớp"}
-            </Button>
-          </div>
-        </form>
+        <SectionForm 
+          editingId={editingId} 
+          initialSubjectId={initialSubjectId}
+          onSuccess={() => setIsModalOpen(false)} 
+          onCancel={() => setIsModalOpen(false)} 
+        />
       </Modal>
 
-      {/* Modal Ghi Danh Học Sinh (Mapping) */}
       <Modal 
         isOpen={isMapModalOpen} 
         onClose={() => { setIsMapModalOpen(false); setClassSearchTerm(''); }} 
@@ -337,7 +251,7 @@ export const Sections = () => {
       >
         <div className="space-y-6 pt-2">
           <p className="text-foreground/50 text-xs font-medium leading-relaxed border-l-2 border-primary pl-4 py-1 bg-primary/5 rounded-r-lg">
-            Bạn có thể ghi danh lẻ từng học viên hoặc chọn 'Ghi danh cả lớp' để thêm nhanh toàn bộ sỹ số từ các lớp hành chính.
+            Ghi danh lẻ từng học viên hoặc chọn 'Ghi danh cả lớp' để thêm nhanh toàn bộ sỹ số từ các lớp hành chính.
           </p>
           
           <div className="relative group">
@@ -391,45 +305,6 @@ export const Sections = () => {
                 </div>
               );
             })}
-
-            {/* Nhóm học sinh tự do */}
-            {(() => {
-              const classIds = classes?.map(c => c.id) || [];
-              const unassignedStudents = students?.filter(s => !s.classId || !classIds.includes(s.classId)) || [];
-              const unassignedTitle = "Học viên tự do";
-              
-              if (unassignedStudents.length === 0) return null;
-              if (classSearchTerm && !unassignedTitle.toLowerCase().includes(classSearchTerm.toLowerCase())) return null;
-
-              return (
-                <div className="space-y-3 pt-2">
-                  <div className="flex items-center justify-between sticky top-0 bg-background-light/95 backdrop-blur-md py-2.5 px-3 rounded-xl border border-yellow-500/10 z-10 shadow-sm">
-                    <span className="text-xs font-black text-yellow-500 uppercase tracking-widest">{unassignedTitle}</span>
-                    <Button 
-                      variant="ghost" className="text-[10px] h-7 font-black uppercase tracking-widest px-3 hover:bg-yellow-500/10 text-yellow-500 rounded-lg"
-                      onClick={() => handleMapStudents(unassignedStudents.map(s => s.id!))}
-                    >
-                      Thêm tất cả
-                    </Button>
-                  </div>
-                  <div className="grid grid-cols-1 gap-2 pl-2">
-                    {unassignedStudents.map(s => {
-                      const isEnrolled = enrollments?.some(e => e.sectionId === selectedSectionId && e.studentId === s.id);
-                      return (
-                        <div key={s.id} className="flex items-center justify-between p-3 rounded-2xl bg-yellow-500/5 border border-dashed border-yellow-500/10 hover:border-yellow-500/30 transition-all">
-                          <span className="text-sm font-bold text-foreground/80">{s.name} <span className="text-[10px] text-foreground/30 ml-2 font-black">#{s.studentCode}</span></span>
-                          {isEnrolled ? (
-                            <CheckIcon className="w-4 h-4 text-green-500" />
-                          ) : (
-                            <Button variant="ghost" className="h-8 text-[10px] font-black uppercase tracking-widest text-primary hover:bg-primary/10 px-3 rounded-lg" onClick={() => handleMapStudents([s.id!])}>+ Thêm</Button>
-                          )}
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              );
-            })()}
           </div>
           <div className="pt-6 border-t border-foreground/5">
             <Button className="w-full h-12 rounded-2xl shadow-xl shadow-primary/10" onClick={() => setIsMapModalOpen(false)}>
@@ -439,14 +314,12 @@ export const Sections = () => {
         </div>
       </Modal>
 
-      {/* Modal Xem Danh Sách Học Sinh */}
       <Modal isOpen={isViewStudentsModalOpen} onClose={() => setIsViewStudentsModalOpen(false)} title="Danh sách lớp học phần">
         <div className="space-y-6 pt-2">
           <div className="max-h-[500px] overflow-auto space-y-2 pr-2 custom-scrollbar">
             {enrollments?.filter(e => e.sectionId === selectedSectionId).map((enrollment) => {
               const student = students?.find(s => s.id === enrollment.studentId);
               if (!student) return null;
-
               return (
                 <div key={enrollment.id} className="flex items-center justify-between p-4 rounded-2xl bg-foreground/5 border border-foreground/5 group/item transition-all hover:bg-foreground/10">
                   <div className="flex items-center gap-4">
@@ -458,28 +331,15 @@ export const Sections = () => {
                       <p className="text-[10px] font-bold uppercase tracking-widest text-foreground/30">{student.studentCode}</p>
                     </div>
                   </div>
-                  <Button 
-                    variant="ghost" 
-                    className="p-2 w-10 h-10 rounded-xl text-red-500/20 group-hover/item:text-red-500 hover:bg-red-500/10 transition-all"
-                    onClick={() => handleUnenrollStudent(enrollment.id!)}
-                  >
+                  <Button variant="ghost" className="p-2 w-10 h-10 rounded-xl text-red-500/20 group-hover/item:text-red-500 hover:bg-red-500/10 transition-all" onClick={() => handleUnenrollStudent(enrollment.id!)}>
                     <Trash2 className="w-5 h-5" />
                   </Button>
                 </div>
               );
             })}
-            
-            {enrollments?.filter(e => e.sectionId === selectedSectionId).length === 0 && (
-              <div className="text-center py-20 bg-foreground/5 rounded-[2rem] border border-dashed border-foreground/10">
-                <Users className="w-12 h-12 text-foreground/5 mx-auto mb-4" />
-                <p className="text-foreground/40 text-sm font-bold opacity-50">Lớp hiện chưa có học sinh nào.</p>
-              </div>
-            )}
           </div>
           <div className="pt-4 border-t border-foreground/5">
-            <Button variant="secondary" className="w-full h-12 rounded-2xl" onClick={() => setIsViewStudentsModalOpen(false)}>
-              Đóng danh sách
-            </Button>
+            <Button variant="secondary" className="w-full h-12 rounded-2xl" onClick={() => setIsViewStudentsModalOpen(false)}> Đóng danh sách </Button>
           </div>
         </div>
       </Modal>

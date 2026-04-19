@@ -65,9 +65,11 @@ export const Input = React.forwardRef<HTMLInputElement & HTMLSelectElement & HTM
           )}
         </div>
 
-        <div className="min-h-[20px] mt-1.5">
-          {error && <p className="text-xs text-red-500 font-medium">{error}</p>}
-        </div>
+        {error && (
+          <div className="mt-1.5">
+            <p className="text-xs text-red-500 font-medium">{error}</p>
+          </div>
+        )}
       </div>
     );
   }

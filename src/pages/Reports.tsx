@@ -331,7 +331,7 @@ export const Reports = () => {
             variant="secondary" 
             onClick={() => setFilter({...filter, date: ''})}
             disabled={!filter.date}
-            className="w-11 h-11 p-0 flex-shrink-0 mb-[26px]"
+            className="w-12 h-12 p-0 flex-shrink-0 rounded-xl"
             title="Xóa ngày"
           >
             <Trash2 className="w-4 h-4" />

@@ -1,0 +1,21 @@
+.master-data-tabs-container {
+  position: sticky;
+  top: 1rem;
+  z-index: 40;
+}
+
+/* Hide scrollbar for Chrome, Safari and Opera */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+/* Hide scrollbar for IE, Edge and Firefox */
+.no-scrollbar {
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;  /* Firefox */
+}
+
+/* Smooth glass effect for the tab bar when sticky */
+.master-data-tabs-container > div {
+  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+}

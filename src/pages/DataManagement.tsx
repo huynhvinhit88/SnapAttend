@@ -744,7 +744,7 @@ export const DataManagement = () => {
           )}
         >
           <FileUp className="w-4 h-4" />
-          Nhập Excel
+          Nhập dữ liệu
         </button>
         <button
           onClick={() => setActiveTab('export')}

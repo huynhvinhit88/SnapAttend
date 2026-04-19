@@ -6,7 +6,7 @@ interface FilterState {
   teachers: { searchTerm: string };
   subjects: { searchTerm: string };
   sections: { searchTerm: string };
-  sessions: { searchTerm: string; selectedSectionId: string; filterDate: string };
+  sessions: { searchTerm: string; sectionId: string; subjectId: string; filterDate: string; status: string };
   reports: { date: string; subjectId: string; sectionId: string; status: string };
 }
 
@@ -16,7 +16,7 @@ const initialState: FilterState = {
   teachers: { searchTerm: '' },
   subjects: { searchTerm: '' },
   sections: { searchTerm: '' },
-  sessions: { searchTerm: '', selectedSectionId: 'all', filterDate: '' },
+  sessions: { searchTerm: '', sectionId: 'all', subjectId: 'all', filterDate: '', status: 'all' },
   reports: { date: '', subjectId: 'all', sectionId: 'all', status: 'all' }
 };
 

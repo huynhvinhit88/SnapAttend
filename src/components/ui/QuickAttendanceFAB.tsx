@@ -51,18 +51,19 @@ export const QuickAttendanceFAB = ({ onNavigate, activeId }: QuickAttendanceFABP
   }, [lastScrollY]);
 
   const handleQuickAccess = () => {
-    // 1. Cập nhật filter về ngày hôm nay
+    // 1. Cập nhật filter về ngày hôm nay và trạng thái chưa điểm danh
     updateFilter('sessions', { 
       filterDate: format(new Date(), 'yyyy-MM-dd'),
-      searchTerm: '' 
+      status: 'pending',
+      sectionId: 'all',
+      subjectId: 'all'
     });
     
     // 2. Chuyển hướng sang trang ca học
     onNavigate('sessions');
   };
 
-  // Không hiển thị nếu đang ở trang điểm danh hoặc chính trang ca học (tùy chọn)
-  // Nhưng ở đây ta cứ cho hiển thị để chuyển nhanh bất cứ lúc nào
+  // Không hiển thị nếu đang ở trang điểm danh
   if (activeId === 'attendance') return null;
 
   return (
@@ -72,26 +73,26 @@ export const QuickAttendanceFAB = ({ onNavigate, activeId }: QuickAttendanceFABP
           initial={{ opacity: 0, scale: 0.5, y: 100 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.5, y: 100 }}
-          className="fixed bottom-4 right-4 z-50 md:bottom-8 md:right-8"
+          className="fixed bottom-6 right-6 z-50 md:bottom-8 md:right-8"
         >
           <button
             onClick={handleQuickAccess}
             className={clsx(
-              "group relative flex items-center gap-2 p-2 md:p-2.5 rounded-2xl transition-all active:scale-95 shadow-2xl overflow-hidden",
-              "bg-primary/20 backdrop-blur-xl border border-primary/30",
-              "hover:bg-primary/30 hover:shadow-primary/40"
+              "group relative flex items-center gap-2 p-2 md:p-2.5 rounded-[1.5rem] transition-all active:scale-95 shadow-2xl overflow-hidden",
+              "bg-primary/95 backdrop-blur-xl border border-white/10 shadow-primary/40",
+              "hover:bg-primary hover:shadow-primary/60"
             )}
           >
-            {/* Background Glow */}
-            <div className="absolute inset-0 bg-gradient-to-br from-primary/20 to-accent/20 opacity-0 group-hover:opacity-100 transition-opacity" />
+            {/* Background Effects */}
+            <div className="absolute inset-0 bg-gradient-to-br from-white/10 to-transparent opacity-50" />
             
-            <div className="relative z-10 w-10 h-10 flex items-center justify-center bg-primary rounded-xl shadow-lg group-hover:rotate-12 transition-transform">
+            <div className="relative z-10 w-10 h-10 flex items-center justify-center bg-white/10 rounded-2xl shadow-inner group-hover:rotate-12 transition-transform">
               <Zap className="w-5 h-5 text-white fill-current" />
             </div>
 
-            <div className="relative z-10 pr-3">
-              <p className="hidden md:block text-[9px] text-primary font-black uppercase tracking-widest leading-none mb-1 opacity-70">Truy cập nhanh</p>
-              <p className="text-xs md:text-sm font-black text-foreground leading-none">Điểm danh Hôm nay</p>
+            <div className="relative z-10 pr-3 text-left">
+              <p className="text-[8px] text-white/50 font-black uppercase tracking-widest leading-none mb-1">Truy cập nhanh</p>
+              <p className="text-xs md:text-sm font-black text-white leading-none">Điểm danh Hôm nay</p>
             </div>
           </button>
         </motion.div>

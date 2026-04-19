@@ -34,7 +34,7 @@ export const Input = React.forwardRef<HTMLInputElement & HTMLSelectElement & HTM
         
         <div className="relative group">
           {icon && (
-            <div className="absolute left-4 top-1/2 -translate-y-1/2 text-white/30 pointer-events-none transition-colors group-focus-within:text-primary">
+            <div className="absolute left-4 top-1/2 -translate-y-1/2 text-white/30 pointer-events-none transition-colors group-focus-within:text-primary z-10">
               {icon}
             </div>
           )}
@@ -58,11 +58,11 @@ export const Input = React.forwardRef<HTMLInputElement & HTMLSelectElement & HTM
               {...(props as any)} 
             />
           ) : (
-            <div className="relative">
+            <>
               <input 
                 ref={ref as any} 
                 type={type} 
-                className={cn(inputClasses, onClear && props.value && 'pr-10')} 
+                className={cn(inputClasses, onClear && props.value && 'pr-12', 'text-left')} 
                 {...(props as any)} 
               />
               {onClear && props.value && (
@@ -73,12 +73,12 @@ export const Input = React.forwardRef<HTMLInputElement & HTMLSelectElement & HTM
                     e.stopPropagation();
                     onClear();
                   }}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 w-6 h-6 flex items-center justify-center rounded-full bg-foreground/10 hover:bg-foreground/20 text-foreground/40 hover:text-foreground transition-all z-10"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 w-8 h-8 flex items-center justify-center rounded-full bg-foreground/10 hover:bg-foreground/20 text-foreground/40 hover:text-foreground transition-all z-20"
                 >
-                  <X className="w-3.5 h-3.5" />
+                  <X className="w-4 h-4" />
                 </button>
               )}
-            </div>
+            </>
           )}
         </div>
 

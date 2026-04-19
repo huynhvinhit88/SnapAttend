@@ -1,6 +1,6 @@
-import React, { useState, useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
-import { Plus, School, Trash2, Search, Pencil, Users } from 'lucide-react';
+import { Plus, School, Trash2, Search, Pencil } from 'lucide-react';
 import { db } from '../../db/db';
 import { Button } from '../ui/Button';
 import { Card } from '../ui/Card';
@@ -18,7 +18,6 @@ export const ClassesSection = () => {
   const [editingId, setEditingId] = useState<number | null>(null);
 
   const classes = useLiveQuery(() => db.classes.toArray());
-  const academicYears = useLiveQuery(() => db.academicYears.toArray());
   
   const filteredClasses = useMemo(() => {
     if (!classes) return [];

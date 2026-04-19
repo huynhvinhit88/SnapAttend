@@ -1,11 +1,10 @@
-import React, { useState, useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
-import { School, Users, GraduationCap, BookOpen, Plus, Pencil, Trash2, ChevronRight, UserPlus, FolderPlus } from 'lucide-react';
+import { School, GraduationCap, BookOpen, Plus, Pencil, Trash2, UserPlus } from 'lucide-react';
 import { db } from '../../db/db';
 import { Card } from '../ui/Card';
 import { Button } from '../ui/Button';
 import { Modal } from '../ui/Modal';
-import { motion, AnimatePresence } from 'framer-motion';
 
 // Import Shared Forms
 import { ClassForm } from './forms/ClassForm';
@@ -19,7 +18,7 @@ interface OverviewSectionProps {
   onNavigateToTab?: (id: 'classes' | 'students' | 'teachers' | 'subjects') => void;
 }
 
-export const OverviewSection = ({ onNavigateToTab }: OverviewSectionProps) => {
+export const OverviewSection = ({ onNavigateToTab: _onNavigateToTab }: OverviewSectionProps) => {
   const [modalType, setModalType] = useState<ModalType>(null);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [initialData, setInitialData] = useState<any>(null);

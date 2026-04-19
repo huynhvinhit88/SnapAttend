@@ -1,7 +1,7 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { 
-  Plus, Calendar, Clock, Trash2, Search, 
+  Plus, Calendar, Clock, Trash2, 
   Play, Repeat, AlertCircle, CheckCircle2, Layers, BookOpen 
 } from 'lucide-react';
 import { db } from '../db/db';
@@ -137,12 +137,6 @@ export const Sessions = ({ onStartAttendance }: SessionsProps) => {
     }
   };
 
-  const handleTodayFilter = () => {
-    updateFilter('sessions', { 
-      filterDate: format(new Date(), 'yyyy-MM-dd'),
-      status: 'pending'
-    });
-  };
 
   const groupedData = useMemo(() => {
     if (!sections || !sessions || !subjects) return [];

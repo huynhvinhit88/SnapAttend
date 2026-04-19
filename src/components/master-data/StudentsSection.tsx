@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { Plus, Trash2, Search, Pencil, Users } from 'lucide-react';
 import { db } from '../../db/db';

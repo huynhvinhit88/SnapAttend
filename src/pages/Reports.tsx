@@ -1,7 +1,11 @@
 import { useState, useMemo } from 'react';
 import * as XLSX from 'xlsx';
 import { useLiveQuery } from 'dexie-react-hooks';
-import { FileSpreadsheet, Filter, CheckCircle2, Clock, XCircle, Calendar, BookOpen, Layers, Trash2, BarChart3, Cloud, RefreshCw } from 'lucide-react';
+import { 
+  FileSpreadsheet, Filter, CheckCircle2, Clock, XCircle, 
+  Calendar, BookOpen, Layers, Trash2, BarChart3, 
+  Cloud, RefreshCw, AlertCircle, HelpCircle 
+} from 'lucide-react';
 import { db } from '../db/db';
 import { Button } from '../components/ui/Button';
 import { Card } from '../components/ui/Card';
@@ -48,14 +52,25 @@ const SessionReportTable = ({
 
   return (
     <Card className="p-0 overflow-hidden border-primary/10 shadow-lg">
-      <div className="bg-primary/5 p-4 border-b border-foreground/10 flex flex-col md:flex-row md:items-center justify-between gap-2">
+      <div className="bg-primary/5 p-4 border-b border-foreground/10 flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-xl bg-primary/20 flex items-center justify-center">
             <Layers className="w-5 h-5 text-primary" />
           </div>
           <div>
-            <h3 className="text-lg font-bold text-foreground">{sectionName}</h3>
-            <p className="text-foreground/40 text-xs font-bold uppercase tracking-widest">
+            <div className="flex items-center gap-2">
+              <h3 className="text-lg font-bold text-foreground">{sectionName}</h3>
+              {session.status === 'completed' ? (
+                <div className="flex items-center gap-1.5 px-3 py-1 bg-green-500/10 text-green-500 rounded-full text-[10px] font-black uppercase tracking-wider border border-green-500/20">
+                  <CheckCircle2 className="w-3 h-3" /> Đã điểm danh
+                </div>
+              ) : (
+                <div className="flex items-center gap-1.5 px-3 py-1 bg-yellow-500/10 text-yellow-500 rounded-full text-[10px] font-black uppercase tracking-wider border border-yellow-500/20">
+                  <AlertCircle className="w-3 h-3" /> Chưa điểm danh
+                </div>
+              )}
+            </div>
+            <p className="text-foreground/40 text-xs font-bold uppercase tracking-widest mt-0.5">
               {format(parseISO(session.date), 'dd/MM/yyyy')} • {session.startTime} - {session.endTime}
             </p>
           </div>
@@ -65,12 +80,29 @@ const SessionReportTable = ({
             <p className="text-[10px] text-foreground/30 font-bold uppercase">Sĩ số</p>
             <p className="text-sm font-bold text-foreground">{combinedData.length}</p>
           </div>
-          <div className="text-center">
-            <p className="text-[10px] text-red-400/60 font-bold uppercase">Vắng</p>
-            <p className="text-sm font-bold text-red-500">{combinedData.filter(d => d.status === 'absent').length}</p>
-          </div>
+          {session.status === 'completed' && (
+            <>
+              <div className="text-center">
+                <p className="text-[10px] text-orange-400 font-bold uppercase">Vắng CP</p>
+                <p className="text-sm font-bold text-orange-500">{combinedData.filter(d => d.status === 'absent_cp').length}</p>
+              </div>
+              <div className="text-center">
+                <p className="text-[10px] text-red-400 font-bold uppercase">Vắng KP</p>
+                <p className="text-sm font-bold text-red-500">{combinedData.filter(d => d.status === 'absent_kp' || (d.status as any) === 'absent').length}</p>
+              </div>
+            </>
+          )}
         </div>
       </div>
+
+      {session.status === 'pending' && (
+        <div className="bg-yellow-500/5 p-3 px-6 border-b border-yellow-500/10 flex items-center gap-3">
+          <HelpCircle className="w-4 h-4 text-yellow-500/50" />
+          <p className="text-xs text-yellow-500/70 font-medium">
+            Ca học này chưa được điểm danh thực tế. Dữ liệu bên dưới là danh sách lớp hiện tại.
+          </p>
+        </div>
+      )}
       
       <div className="overflow-x-auto">
         <table className="w-full text-left border-collapse">
@@ -91,9 +123,18 @@ const SessionReportTable = ({
                 <td className="p-4 text-center text-foreground/50 text-xs font-mono">{item.studentCode}</td>
                 <td className="p-4">
                   <div className="flex justify-center">
-                    {item.status === 'present' && <span className="flex items-center gap-1.5 text-green-500 bg-green-500/10 px-2.5 py-1 rounded-full text-[9px] font-bold uppercase border border-green-500/20"><CheckCircle2 className="w-3 h-3" /> Có mặt</span>}
-                    {item.status === 'late' && <span className="flex items-center gap-1.5 text-yellow-500 bg-yellow-500/10 px-2.5 py-1 rounded-full text-[9px] font-bold uppercase border border-yellow-500/20"><Clock className="w-3 h-3" /> Trễ</span>}
-                    {item.status === 'absent' && <span className="flex items-center gap-1.5 text-red-500 bg-red-500/10 px-2.5 py-1 rounded-full text-[9px] font-bold uppercase border border-red-500/20"><XCircle className="w-3 h-3" /> Vắng</span>}
+                    {session.status === 'pending' ? (
+                      <span className="flex items-center gap-1.5 text-foreground/30 bg-foreground/5 px-2.5 py-1 rounded-full text-[9px] font-bold uppercase border border-foreground/10">
+                        <Clock className="w-3 h-3" /> Chưa ghi nhận
+                      </span>
+                    ) : (
+                      <>
+                        {item.status === 'present' && <span className="flex items-center gap-1.5 text-green-500 bg-green-500/10 px-2.5 py-1 rounded-full text-[9px] font-bold uppercase border border-green-500/20"><CheckCircle2 className="w-3 h-3" /> Có mặt</span>}
+                        {item.status === 'late' && <span className="flex items-center gap-1.5 text-yellow-500 bg-yellow-500/10 px-2.5 py-1 rounded-full text-[9px] font-bold uppercase border border-yellow-500/20"><Clock className="w-3 h-3" /> Trễ</span>}
+                        {item.status === 'absent_cp' && <span className="flex items-center gap-1.5 text-orange-500 bg-orange-500/10 px-2.5 py-1 rounded-full text-[9px] font-bold uppercase border border-orange-500/20"><XCircle className="w-3 h-3" /> Vắng CP</span>}
+                        {(item.status === 'absent_kp' || (item.status as any) === 'absent') && <span className="flex items-center gap-1.5 text-red-500 bg-red-500/10 px-2.5 py-1 rounded-full text-[9px] font-bold uppercase border border-red-500/20"><XCircle className="w-3 h-3" /> Vắng KP</span>}
+                      </>
+                    )}
                   </div>
                 </td>
                 <td className="p-4 text-right text-foreground/20 text-[10px] pr-6">
@@ -140,28 +181,39 @@ export const Reports = () => {
       // Lọc theo lớp học phần
       const matchesSection = filter.sectionId === 'all' || s.sectionId === parseInt(filter.sectionId);
 
-      return matchesDate && matchesSubject && matchesSection;
+      // Lọc theo trạng thái điểm danh
+      const matchesStatus = filter.status === 'all' || s.status === filter.status;
+
+      return matchesDate && matchesSubject && matchesSection && matchesStatus;
     }).sort((a, b) => b.createdAt - a.createdAt); // Mới nhất lên đầu
   }, [sessions, sections, filter]);
 
   const getReportAOA = () => {
-    const headers = ["Lớp học phần", "Ca học", "Họ và tên", "Mã HS", "Trạng thái", "Ngày", "Giờ ghi nhận"];
+    const headers = ["Lớp học phần", "Ca học", "Trạng thái ca học", "Họ và tên", "Mã HS", "Trạng thái", "Ngày", "Giờ ghi nhận"];
     const rows: any[][] = [];
 
     matchingSessions.forEach(session => {
       const section = sections?.find(s => s.id === session.sectionId);
       const sectionEnrollments = enrollments?.filter(e => e.sectionId === session.sectionId) || [];
+      const sessionStatusText = session.status === 'completed' ? 'Đã điểm danh' : 'Chưa điểm danh';
       
       sectionEnrollments.forEach(enrollment => {
         const student = students?.find(s => s.id === enrollment.studentId);
         const record = records?.find(r => r.sessionId === session.id && r.studentId === enrollment.studentId);
         const status = record?.status || 'present';
         const timestamp = record ? format(new Date(record.timestamp), 'HH:mm:ss') : '-';
-        const statusText = status === 'present' ? 'Có mặt' : status === 'late' ? 'Trễ' : 'Vắng';
+        
+        let statusText = '';
+        if (session.status === 'pending') {
+          statusText = 'Chưa điểm danh';
+        } else {
+          statusText = status === 'present' ? 'Có mặt' : status === 'late' ? 'Trễ' : status === 'absent_cp' ? 'Vắng CP' : 'Vắng KP';
+        }
         
         rows.push([
           section?.name || 'N/A',
           `${session.startTime}-${session.endTime}`,
+          sessionStatusText,
           student?.name || 'N/A',
           student?.studentCode || 'N/A',
           statusText,
@@ -231,6 +283,20 @@ export const Reports = () => {
       {/* Advanced Filter Card */}
       <Card className="flex flex-col md:flex-row items-end gap-6 relative overflow-hidden p-6 border-none shadow-none">
         <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full -mr-16 -mt-16 blur-3xl" />
+        <div className="flex-1 w-full">
+          <Input 
+            label="Trạng thái" 
+            type="select"
+            icon={<Filter className="w-4 h-4" />}
+            options={[
+              { value: 'all', label: 'Tất cả trạng thái' },
+              { value: 'completed', label: 'Đã điểm danh' },
+              { value: 'pending', label: 'Chưa điểm danh' }
+            ]}
+            value={filter.status} 
+            onChange={e => setFilter({...filter, status: e.target.value})}
+          />
+        </div>
         <div className="flex-1 w-full">
           <Input 
             label="Môn học" 

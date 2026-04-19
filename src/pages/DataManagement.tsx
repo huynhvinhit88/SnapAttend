@@ -4,8 +4,8 @@ import * as XLSX from 'xlsx';
 import { 
   FileUp, FileDown, CheckCircle2, AlertTriangle, 
   XCircle, Database, Trash2, 
-  Cloud, RefreshCw, Search, History,
-  FileJson, CloudUpload, CloudDownload, Calendar
+  Cloud, RefreshCw, Search, History, Folder,
+  FileJson, CloudUpload, CloudDownload, Calendar, Link2Off
 } from 'lucide-react';
 import { db } from '../db/db';
 import { Button } from '../components/ui/Button';
@@ -47,7 +47,7 @@ const CATEGORIES: { id: Category; label: string; icon: any }[] = [
 ];
 
 export const DataManagement = () => {
-  const [activeTab, setActiveTab] = useState<'import' | 'export' | 'cloud'>('import');
+  const [activeTab, setActiveTab] = useState<'import' | 'export' | 'cloud'>('cloud');
   const [selectedCategory, setSelectedCategory] = useState<Category>('classes');
   const [importData, setImportData] = useState<ValidationResult[]>([]);
   const [isProcessing, setIsProcessing] = useState(false);
@@ -60,6 +60,7 @@ export const DataManagement = () => {
   const [isSyncing, setIsSyncing] = useState(false);
   const [isConnected, setIsConnected] = useState(googleDriveService.isConnected());
   const [isCloudPickerOpen, setIsCloudPickerOpen] = useState(false);
+  const [folderName, setFolderName] = useState<string | null>(null);
 
   // Lấy dữ liệu từ DB để validation
   const dbClasses = useLiveQuery(() => db.classes.toArray());
@@ -142,6 +143,9 @@ export const DataManagement = () => {
     try {
       setIsSyncing(true);
       setIsConnected(true);
+      const name = await googleDriveService.getFolderName();
+      setFolderName(name);
+      
       const files = await googleDriveService.listFiles('application/json');
       setCloudFiles(files.sort((a, b) => new Date(b.createdTime).getTime() - new Date(a.createdTime).getTime()));
     } catch (error) {
@@ -180,8 +184,40 @@ export const DataManagement = () => {
 
   const handleConnectDrive = async () => {
     setIsSyncing(true);
-    await ensureAuthenticated();
+    const authenticated = await ensureAuthenticated();
+    if (authenticated) {
+      try {
+        const { id, name } = await googleDriveService.pickFolder();
+        setFolderName(name);
+        setIsConnected(true);
+        fetchCloudFiles();
+      } catch (err) {
+        console.error('Lỗi chọn thư mục:', err);
+      }
+    }
     setIsSyncing(false);
+  };
+
+  const handleChangeFolder = async () => {
+    try {
+      setIsSyncing(true);
+      const { id, name } = await googleDriveService.pickFolder();
+      setFolderName(name);
+      fetchCloudFiles();
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setIsSyncing(false);
+    }
+  };
+
+  const handleDisconnectDrive = async () => {
+    if (confirm('Bạn có chắc chắn muốn ngắt kết nối Google Drive?')) {
+      await googleDriveService.disconnect();
+      setIsConnected(false);
+      setFolderName(null);
+      setCloudFiles([]);
+    }
   };
 
   const handleCloudBackup = async () => {
@@ -197,7 +233,8 @@ export const DataManagement = () => {
       fetchCloudFiles();
     } catch (error) {
       console.error(error);
-      alert('Lỗi sao lưu: ' + (typeof error === 'string' ? error : 'Vui lòng kiểm tra kết nối Google Drive trong Cài đặt'));
+      const errMsg = error instanceof Error ? error.message : (typeof error === 'string' ? error : 'Vui lòng kiểm tra kết nối Google Drive trong Cài đặt');
+      alert('Lỗi sao lưu: ' + errMsg);
     } finally {
       setIsSyncing(false);
     }
@@ -222,7 +259,8 @@ export const DataManagement = () => {
       }
     } catch (error) {
       console.error(error);
-      alert('Lỗi khôi phục: ' + (typeof error === 'string' ? error : 'Vui lòng kiểm tra lại cấu hình'));
+      const errMsg = error instanceof Error ? error.message : (typeof error === 'string' ? error : 'Vui lòng kiểm tra lại cấu hình');
+      alert('Lỗi khôi phục: ' + errMsg);
     } finally {
       setIsSyncing(false);
     }
@@ -233,6 +271,14 @@ export const DataManagement = () => {
     if (googleDriveService.isConnected()) {
       setActiveTab('cloud');
     }
+    // Fetch folder name ngay lập tức nếu đã kết nối
+    const initFolder = async () => {
+      if (googleDriveService.isConnected()) {
+        const name = await googleDriveService.getFolderName();
+        setFolderName(name);
+      }
+    };
+    initFolder();
   }, []);
 
   useEffect(() => {
@@ -508,6 +554,12 @@ export const DataManagement = () => {
     if (exportSelection.size === 0) return alert('Vui lòng chọn ít nhất một danh mục để xuất!');
 
     if (isCloud) {
+      if (!googleDriveService.isConnected() || !folderName) {
+        alert('Vui lòng kết nối Google Drive và chọn thư mục lưu trữ tại tab Đám mây trước khi sử dụng tính năng này.');
+        setActiveTab('cloud');
+        return;
+      }
+      
       // Đăng nhập ngay lập tức để giữ user gesture
       try {
         await googleDriveService.authenticate();
@@ -580,6 +632,12 @@ export const DataManagement = () => {
   };
 
   const handleCloudImport = async () => {
+    if (!googleDriveService.isConnected() || !folderName) {
+      alert('Vui lòng kết nối Google Drive và chọn thư mục lưu trữ tại tab Đám mây trước khi sử dụng tính năng này.');
+      setActiveTab('cloud');
+      return;
+    }
+
     if (!(await ensureAuthenticated())) return;
     setIsConnected(true);
 
@@ -669,6 +727,16 @@ export const DataManagement = () => {
       {/* Tab Switcher */}
       <div className="flex p-1 bg-foreground/5 rounded-2xl w-fit mb-8">
         <button
+          onClick={() => setActiveTab('cloud')}
+          className={clsx(
+            "flex items-center gap-2 px-6 py-3 rounded-xl font-bold transition-all",
+            activeTab === 'cloud' ? "bg-background text-primary shadow-sm" : "text-foreground/40 hover:text-foreground"
+          )}
+        >
+          <Cloud className="w-4 h-4" />
+          Đám mây
+        </button>
+        <button
           onClick={() => setActiveTab('import')}
           className={clsx(
             "flex items-center gap-2 px-6 py-3 rounded-xl font-bold transition-all",
@@ -687,16 +755,6 @@ export const DataManagement = () => {
         >
           <FileDown className="w-4 h-4" />
           Xuất dữ liệu
-        </button>
-        <button
-          onClick={() => setActiveTab('cloud')}
-          className={clsx(
-            "flex items-center gap-2 px-6 py-3 rounded-xl font-bold transition-all",
-            activeTab === 'cloud' ? "bg-background text-primary shadow-sm" : "text-foreground/40 hover:text-foreground"
-          )}
-        >
-          <Cloud className="w-4 h-4" />
-          Đám mây
         </button>
       </div>
 
@@ -947,59 +1005,76 @@ export const DataManagement = () => {
           >
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
               <div className="lg:col-span-1 space-y-6">
-                <Card className="border-none shadow-none bg-primary/5 overflow-hidden">
-                  <div className="absolute top-0 right-0 w-32 h-32 bg-primary/10 rounded-full -mr-16 -mt-16 blur-3xl" />
-                  <div className="relative p-6">
-                    <div className="flex items-center justify-between mb-4">
-                      <div className="w-12 h-12 bg-primary/20 rounded-xl flex items-center justify-center">
-                        <Cloud className="w-6 h-6 text-primary" />
+                {!isConnected ? (
+                  <Card className="border-none shadow-none bg-primary/5 overflow-hidden">
+                    <div className="absolute top-0 right-0 w-32 h-32 bg-primary/10 rounded-full -mr-16 -mt-16 blur-3xl" />
+                    <div className="relative p-8 text-center">
+                      <div className="w-16 h-16 bg-primary/20 rounded-2xl flex items-center justify-center mx-auto mb-6">
+                        <Cloud className="w-8 h-8 text-primary" />
                       </div>
-                      <div className={clsx(
-                        "px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest",
-                        isConnected ? "bg-green-500/10 text-green-500" : "bg-red-500/10 text-red-500"
-                      )}>
-                        {isConnected ? 'Đã kết nối' : 'Chưa kết nối'}
-                      </div>
-                    </div>
-                    <h3 className="text-xl font-bold text-foreground mb-2">Đồng bộ hoàn hảo</h3>
-                    <p className="text-sm text-foreground/40 mb-6 leading-relaxed">
-                      Tất cả dữ liệu được đóng gói thành file JSON và lưu trữ an toàn trong thư mục bạn chọn trên Google Drive.
-                    </p>
-                    
-                    <div className="space-y-3">
-                      {!isConnected && (
-                        <Button 
-                          variant="secondary"
-                          className="w-full h-12 border-primary/30 text-primary hover:bg-primary/10"
-                          onClick={handleConnectDrive}
-                          disabled={isSyncing}
-                        >
-                          <RefreshCw className={clsx("w-4 h-4", isSyncing && "animate-spin")} />
-                          Kết nối Google Drive
-                        </Button>
-                      )}
-                      <Button 
-                        className="w-full h-12 shadow-xl shadow-primary/20"
-                        onClick={handleCloudBackup}
-                        disabled={isSyncing}
-                      >
-                        {isSyncing ? <RefreshCw className="w-4 h-4 animate-spin" /> : <CloudUpload className="w-4 h-4" />}
-                        Sao lưu lên Đám mây
+                      <h3 className="text-xl font-black text-foreground mb-4">Kết nối Google Drive</h3>
+                      <p className="text-sm text-foreground/50 mb-8 leading-relaxed">
+                        Đồng bộ dữ liệu an toàn trên đám mây cá nhân. Bạn sẽ chọn thư mục lưu trữ ngay khi kết nối thành công.
+                      </p>
+                      <Button size="lg" className="w-full h-14 rounded-2xl shadow-xl shadow-primary/20" onClick={handleConnectDrive} disabled={isSyncing}>
+                        {isSyncing ? <RefreshCw className="w-5 h-5 animate-spin mr-2" /> : <Cloud className="w-5 h-5 mr-2" />}
+                        Kết nối ngay
                       </Button>
                     </div>
-                  </div>
-                </Card>
+                  </Card>
+                ) : (
+                  <Card className="border-none shadow-none bg-primary/5 overflow-hidden">
+                    <div className="absolute top-0 right-0 w-32 h-32 bg-primary/10 rounded-full -mr-16 -mt-16 blur-3xl" />
+                    <div className="relative p-6">
+                      <div className="flex items-center justify-between mb-6">
+                        <div className="w-12 h-12 bg-green-500/10 border border-green-500/20 rounded-xl flex items-center justify-center text-green-500">
+                          <Cloud className="w-6 h-6" />
+                        </div>
+                        <div className="px-3 py-1 bg-green-500/10 text-green-500 rounded-full text-[10px] font-black uppercase tracking-widest border border-green-500/20">
+                          Đã hoạt động
+                        </div>
+                      </div>
+                      
+                      <div className="space-y-4 mb-8">
+                        <div>
+                          <p className="text-[10px] text-foreground/40 font-black uppercase tracking-widest mb-1.5 flex items-center gap-1.5">
+                            <Folder className="w-3 h-3" /> Thư mục lưu trữ
+                          </p>
+                          <div className="p-4 rounded-xl bg-background/50 border border-primary/10 group">
+                            <p className={clsx("font-bold truncate", !folderName && "text-foreground/30")}>
+                                {folderName || (isSyncing ? 'Đang tải...' : 'Chưa cấu hình')}
+                            </p>
+                          </div>
+                        </div>
+                        
+                        <div className="flex gap-2">
+                          <Button variant="secondary" className="flex-1 h-10 text-[10px] font-black uppercase tracking-widest rounded-lg border-primary/20" onClick={handleChangeFolder} disabled={isSyncing}>
+                            Đổi thư mục
+                          </Button>
+                          <Button variant="ghost" className="h-10 px-3 rounded-lg text-red-500 hover:bg-red-500/10" onClick={handleDisconnectDrive}>
+                            <Link2Off className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      </div>
+
+                      <Button size="lg" className="w-full h-14 rounded-2xl shadow-xl shadow-primary/20" onClick={handleCloudBackup} disabled={isSyncing}>
+                        {isSyncing ? <RefreshCw className="w-5 h-5 animate-spin mr-2" /> : <CloudUpload className="w-5 h-5 mr-2" />}
+                        Sao lưu ngay
+                      </Button>
+                    </div>
+                  </Card>
+                )}
 
                 <Card className="border-none shadow-none">
                   <h4 className="font-bold text-foreground/60 p-4 border-b border-foreground/5 uppercase text-[10px] tracking-widest">Hướng dẫn</h4>
                   <div className="p-4 space-y-4">
                     <div className="flex gap-3">
                       <div className="w-6 h-6 rounded-full bg-primary/10 text-primary flex items-center justify-center text-xs font-black">1</div>
-                      <p className="text-xs text-foreground/60 leading-relaxed">Chọn một thư mục chuyên biệt trên Drive để lưu dữ liệu.</p>
+                      <p className="text-xs text-foreground/60 leading-relaxed">Dữ liệu được lưu dưới dạng .json giúp bảo mật và khôi phục dễ dàng.</p>
                     </div>
                     <div className="flex gap-3">
                       <div className="w-6 h-6 rounded-full bg-primary/10 text-primary flex items-center justify-center text-xs font-black">2</div>
-                      <p className="text-xs text-foreground/60 leading-relaxed">Dữ liệu được lưu dưới dạng .json giúp khôi phục nguyên vẹn cấu trúc.</p>
+                      <p className="text-xs text-foreground/60 leading-relaxed">Mỗi lần sao lưu sẽ tạo bản ghi mới để bạn có thể quay lại phiên bản cũ.</p>
                     </div>
                   </div>
                 </Card>

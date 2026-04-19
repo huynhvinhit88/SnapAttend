@@ -1,4 +1,4 @@
-export type AttendanceStatus = 'present' | 'late' | 'absent';
+export type AttendanceStatus = 'present' | 'late' | 'absent_cp' | 'absent_kp';
 
 export interface AcademicYear {
   id?: number;

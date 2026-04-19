@@ -65,8 +65,14 @@ class GoogleDriveService {
     return settings?.value || null;
   }
 
-  async saveFolderId(folderId: string) {
+  async getFolderName(): Promise<string | null> {
+    const settings = await db.settings.get('google_drive_folder_name');
+    return settings?.value || null;
+  }
+
+  async saveFolderInfo(folderId: string, folderName: string) {
     await db.settings.put({ id: 'google_drive_folder_id', value: folderId });
+    await db.settings.put({ id: 'google_drive_folder_name', value: folderName });
   }
 
   async authenticate(): Promise<string> {
@@ -98,7 +104,7 @@ class GoogleDriveService {
     });
   }
 
-  async pickFolder(): Promise<string> {
+  async pickFolder(): Promise<{ id: string, name: string }> {
     const config = await this.getConfig();
     if (!config.apiKey) throw new Error('Vui lòng thiết lập API Key trong cài đặt.');
     
@@ -114,8 +120,10 @@ class GoogleDriveService {
         .setCallback((data: any) => {
           if (data.action === window.google.picker.Action.PICKED) {
             const folderId = data.docs[0].id;
-            this.saveFolderId(folderId);
-            resolve(folderId);
+            const folderName = data.docs[0].name;
+            this.saveFolderInfo(folderId, folderName).then(() => {
+              resolve({ id: folderId, name: folderName });
+            }).catch(reject);
           } else if (data.action === window.google.picker.Action.CANCEL) {
             reject('User cancelled picker');
           }
@@ -129,16 +137,23 @@ class GoogleDriveService {
     if (!this.accessToken) await this.authenticate();
     
     try {
-      const response = await fetch(`https://www.googleapis.com/drive/v3/files/${folderId}?fields=id,name,explicitlyTrash`, {
+      const response = await fetch(`https://www.googleapis.com/drive/v3/files/${folderId}?fields=id,name,trashed`, {
         headers: {
           'Authorization': `Bearer ${this.accessToken}`
         }
       });
       
-      if (response.status === 404) return false;
+      if (!response.ok) {
+        if (response.status === 404) return false;
+        // Nếu là lỗi quyền (403/401), ta vẫn trả về true để lệnh upload tiếp theo được thực hiện.
+        // Nếu thực sự không có quyền upload, lệnh upload sẽ ném lỗi chi tiết hơn.
+        return true;
+      }
+      
       const data = await response.json();
-      return !data.explicitlyTrash;
+      return !data.trashed;
     } catch (err) {
+      console.error('Lỗi validate folder (exception):', err);
       return false;
     }
   }
@@ -146,9 +161,8 @@ class GoogleDriveService {
   async uploadFile(name: string, content: string | Blob | Uint8Array, mimeType: string = 'application/json'): Promise<any> {
     let folderId = await this.getFolderId();
     
-    // Kiểm tra folder tồn tại, nếu không thì bắt chọn lại
-    if (!folderId || !(await this.validateFolder(folderId))) {
-      folderId = await this.pickFolder();
+    if (!folderId) {
+      throw new Error('Chưa chọn thư mục lưu trữ trên Google Drive. Vui lòng thiết lập trong phần kết nối.');
     }
 
     if (!this.accessToken) await this.authenticate();
@@ -170,6 +184,12 @@ class GoogleDriveService {
       },
       body: form
     });
+
+    if (!response.ok) {
+        const errorData = await response.json();
+        console.error('Lỗi upload Google Drive:', errorData);
+        throw new Error(errorData.error?.message || `Lỗi tải lên: ${response.status}`);
+    }
 
     return await response.json();
   }
@@ -248,6 +268,12 @@ class GoogleDriveService {
 
   setAccessToken(token: string) {
     this.accessToken = token;
+  }
+
+  async disconnect() {
+    this.accessToken = null;
+    await db.settings.delete('google_drive_folder_id');
+    await db.settings.delete('google_drive_folder_name');
   }
 }
 

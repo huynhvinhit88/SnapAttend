@@ -36,9 +36,11 @@ export const Attendance = ({ sessionId, onBack }: AttendanceProps) => {
     let nextStatus: AttendanceStatus = 'late'; // Chạm lần đầu (từ mặc định present) -> late
 
     if (existingRecord) {
-      if (existingRecord.status === 'present') nextStatus = 'late';
-      else if (existingRecord.status === 'late') nextStatus = 'absent';
-      else if (existingRecord.status === 'absent') nextStatus = 'present';
+      const status = existingRecord.status as any;
+      if (status === 'present') nextStatus = 'late';
+      else if (status === 'late') nextStatus = 'absent_cp';
+      else if (status === 'absent_cp') nextStatus = 'absent_kp';
+      else if (status === 'absent_kp' || status === 'absent') nextStatus = 'present';
     }
 
     triggerHaptic(nextStatus === 'present' ? [30] : nextStatus === 'late' ? [15, 10, 15] : [50]);
@@ -57,10 +59,11 @@ export const Attendance = ({ sessionId, onBack }: AttendanceProps) => {
 
   const stats = {
     late: records?.filter(r => r.status === 'late').length || 0,
-    absent: records?.filter(r => r.status === 'absent').length || 0,
+    absent_cp: records?.filter(r => r.status === 'absent_cp').length || 0,
+    absent_kp: records?.filter(r => (r.status as any) === 'absent_kp' || r.status === 'absent').length || 0,
     total: enrolledStudents.length,
-    // Present = Tổng - (Vắng + Muộn)
-    get present() { return this.total - this.late - this.absent }
+    // Present = Tổng - (Vắng CP + Vắng KP + Muộn)
+    get present() { return this.total - this.late - this.absent_cp - this.absent_kp }
   };
 
   return (
@@ -77,22 +80,26 @@ export const Attendance = ({ sessionId, onBack }: AttendanceProps) => {
       </div>
 
       {/* Stats Ribbon */}
-      <div className="grid grid-cols-4 gap-2">
-        <div className="bg-foreground/5 p-3 rounded-2xl border border-foreground/5 text-center">
-          <p className="text-[10px] text-foreground/40 font-bold uppercase mb-1">Tổng</p>
-          <p className="text-xl font-bold text-foreground">{stats.total}</p>
+      <div className="grid grid-cols-5 gap-2">
+        <div className="bg-foreground/5 p-2 rounded-2xl border border-foreground/5 text-center">
+          <p className="text-[9px] text-foreground/40 font-bold uppercase mb-0.5">Tổng</p>
+          <p className="text-lg font-bold text-foreground">{stats.total}</p>
         </div>
-        <div className="bg-green-500/10 p-3 rounded-2xl border border-green-500/10 text-center">
-          <p className="text-[10px] text-green-500/60 font-bold uppercase mb-1">Có mặt</p>
-          <p className="text-xl font-bold text-green-500">{stats.present}</p>
+        <div className="bg-green-500/10 p-2 rounded-2xl border border-green-500/10 text-center">
+          <p className="text-[9px] text-green-500/60 font-bold uppercase mb-0.5">Có mặt</p>
+          <p className="text-lg font-bold text-green-500">{stats.present}</p>
         </div>
-        <div className="bg-yellow-500/10 p-3 rounded-2xl border border-yellow-500/10 text-center">
-          <p className="text-[10px] text-yellow-500/60 font-bold uppercase mb-1">Trễ</p>
-          <p className="text-xl font-bold text-yellow-500">{stats.late}</p>
+        <div className="bg-yellow-500/10 p-2 rounded-2xl border border-yellow-500/10 text-center">
+          <p className="text-[9px] text-yellow-500/60 font-bold uppercase mb-0.5">Trễ</p>
+          <p className="text-lg font-bold text-yellow-500">{stats.late}</p>
         </div>
-        <div className="bg-red-500/10 p-3 rounded-2xl border border-red-500/10 text-center">
-          <p className="text-[10px] text-red-500/60 font-bold uppercase mb-1">Vắng</p>
-          <p className="text-xl font-bold text-red-500">{stats.absent}</p>
+        <div className="bg-orange-500/10 p-2 rounded-2xl border border-orange-500/10 text-center">
+          <p className="text-[9px] text-orange-500/60 font-bold uppercase mb-0.5">Vắng CP</p>
+          <p className="text-lg font-bold text-orange-500">{stats.absent_cp}</p>
+        </div>
+        <div className="bg-red-500/10 p-2 rounded-2xl border border-red-500/10 text-center">
+          <p className="text-[9px] text-red-500/60 font-bold uppercase mb-0.5">Vắng KP</p>
+          <p className="text-lg font-bold text-red-500">{stats.absent_kp}</p>
         </div>
       </div>
 
@@ -111,9 +118,10 @@ export const Attendance = ({ sessionId, onBack }: AttendanceProps) => {
             >
               <Card className={clsx(
                 "relative p-3 flex flex-col items-center justify-center transition-all duration-300 border-2",
-                status === 'present' && "bg-green-500/20 border-green-500/50 shadow-[0_0_15px_rgba(34,197,94,0.2)]",
-                status === 'late' && "bg-yellow-500/20 border-yellow-500/50 shadow-[0_0_15px_rgba(234,179,8,0.2)]",
-                status === 'absent' && "bg-red-500/20 border-red-500/50 shadow-[0_0_15px_rgba(239,68,68,0.2)]"
+                status === 'present' && "bg-green-500/20 border-green-500/50 shadow-[0_0_15px_rgba(34,197,94,0.1)]",
+                status === 'late' && "bg-yellow-500/20 border-yellow-500/50 shadow-[0_0_15px_rgba(234,179,8,0.1)]",
+                status === 'absent_cp' && "bg-orange-500/10 border-orange-500/40 shadow-[0_0_15px_rgba(249,115,22,0.05)]",
+                (status === 'absent_kp' || (status as any) === 'absent') && "bg-red-500/20 border-red-500/50 shadow-[0_0_15px_rgba(239,68,68,0.2)]"
               )}>
                 <div className="relative mb-3">
                   {student?.avatar ? (
@@ -131,7 +139,13 @@ export const Attendance = ({ sessionId, onBack }: AttendanceProps) => {
                     >
                       {status === 'present' && <CheckCircle2 className="w-6 h-6 text-green-500 fill-background" />}
                       {status === 'late' && <Clock className="w-6 h-6 text-yellow-500 fill-background" />}
-                      {status === 'absent' && <XCircle className="w-6 h-6 text-red-500 fill-background" />}
+                      {status === 'absent_cp' && (
+                        <div className="relative">
+                          <XCircle className="w-6 h-6 text-orange-500 fill-background" />
+                          <span className="absolute -top-1 -right-1 bg-orange-500 text-[8px] text-white px-1 rounded-full font-black">P</span>
+                        </div>
+                      )}
+                      {(status === 'absent_kp' || (status as any) === 'absent') && <XCircle className="w-6 h-6 text-red-600 fill-background" />}
                     </motion.div>
                   </AnimatePresence>
                 </div>

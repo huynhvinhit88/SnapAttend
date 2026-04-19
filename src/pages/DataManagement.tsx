@@ -524,10 +524,31 @@ export const DataManagement = () => {
 
     setIsProcessing(true);
     try {
-      await db.transaction('rw', [selectedCategory], async () => {
+      // Xác định bảng cần tham gia transaction
+      const tables = [selectedCategory];
+      if (['classes', 'students', 'sections'].includes(selectedCategory)) {
+        tables.push('academicYears');
+      }
+
+      await db.transaction('rw', tables as any, async () => {
         const table = db[selectedCategory as keyof typeof db] as any;
         
         for (const data of validData) {
+          // Tự động thêm năm học nếu chưa có
+          if (['classes', 'students', 'sections'].includes(selectedCategory)) {
+            const yearValue = data.academicYear || data.schoolYear;
+            if (yearValue) {
+              const yearExists = await db.academicYears.where('name').equals(yearValue).first();
+              if (!yearExists) {
+                await db.academicYears.add({
+                  name: yearValue,
+                  isDefault: false,
+                  createdAt: Date.now()
+                });
+              }
+            }
+          }
+
           let existing;
           if (selectedCategory === 'students') existing = await table.where('studentCode').equals(data.studentCode).first();
           else if (selectedCategory === 'teachers') existing = await table.where('teacherCode').equals(data.teacherCode).first();

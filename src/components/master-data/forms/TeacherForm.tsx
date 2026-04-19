@@ -118,6 +118,19 @@ export const TeacherForm: React.FC<TeacherFormProps> = ({
         value={formData.department}
         onChange={(e) => setFormData({...formData, department: e.target.value})}
       />
+      <Input 
+        label="Email" 
+        type="email"
+        placeholder="VD: giao-vien@school.edu.vn"
+        value={formData.email}
+        onChange={(e) => setFormData({...formData, email: e.target.value})}
+      />
+      <Input 
+        label="Số điện thoại" 
+        placeholder="VD: 0912345678"
+        value={formData.phone}
+        onChange={(e) => setFormData({...formData, phone: e.target.value})}
+      />
       
       <div className="flex gap-3 pt-6">
         <Button type="button" variant="secondary" className="flex-1 h-12 rounded-2xl" onClick={onCancel}>

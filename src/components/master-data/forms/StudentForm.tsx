@@ -23,7 +23,6 @@ export const StudentForm: React.FC<StudentFormProps> = ({
     name: '',
     studentCode: '',
     classId: initialClassId ? initialClassId.toString() : '',
-    email: '',
     avatar: '' as string | undefined,
     academicYear: ''
   });
@@ -41,7 +40,6 @@ export const StudentForm: React.FC<StudentFormProps> = ({
             name: student.name,
             studentCode: student.studentCode,
             classId: student.classId.toString(),
-            email: student.email || '',
             avatar: student.avatar || '',
             academicYear: student.academicYear || ''
           });
@@ -79,7 +77,6 @@ export const StudentForm: React.FC<StudentFormProps> = ({
         name: formData.name.trim(),
         studentCode: formData.studentCode.trim(),
         classId: parseInt(formData.classId),
-        email: formData.email.trim() || undefined,
         avatar: formData.avatar || undefined,
         academicYear: formData.academicYear.trim() || undefined,
       };
@@ -150,13 +147,6 @@ export const StudentForm: React.FC<StudentFormProps> = ({
           setFormData({...formData, classId: e.target.value});
           if (errors.classId) setErrors({...errors, classId: ''});
         }}
-      />
-      <Input 
-        label="Email" 
-        type="email"
-        placeholder="VD: hocsinh@school.edu.vn"
-        value={formData.email}
-        onChange={e => setFormData({...formData, email: e.target.value})}
       />
       <Input 
         label="Niên khóa (Tự do)" 

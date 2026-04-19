@@ -43,7 +43,6 @@ export class SnapAttendDB extends Dexie {
     this.students.hook('creating', (_id, obj) => {
       obj.name = obj.name ? cryptoService.encrypt(obj.name) : '';
       obj.studentCode = obj.studentCode ? cryptoService.encrypt(obj.studentCode) : '';
-      if (obj.email) obj.email = cryptoService.encrypt(obj.email);
       if (obj.avatar) obj.avatar = cryptoService.encrypt(obj.avatar);
       if (obj.academicYear) obj.academicYear = cryptoService.encrypt(obj.academicYear);
     });
@@ -52,7 +51,6 @@ export class SnapAttendDB extends Dexie {
       const encryptedUpdates: any = {};
       if (mods.name) encryptedUpdates.name = cryptoService.encrypt(mods.name);
       if (mods.studentCode) encryptedUpdates.studentCode = cryptoService.encrypt(mods.studentCode);
-      if (mods.email) encryptedUpdates.email = cryptoService.encrypt(mods.email);
       if (mods.avatar) encryptedUpdates.avatar = cryptoService.encrypt(mods.avatar);
       if (mods.academicYear) encryptedUpdates.academicYear = cryptoService.encrypt(mods.academicYear);
       return encryptedUpdates;
@@ -64,7 +62,6 @@ export class SnapAttendDB extends Dexie {
         ...obj,
         name: obj.name ? cryptoService.decrypt(obj.name) || obj.name : obj.name,
         studentCode: obj.studentCode ? cryptoService.decrypt(obj.studentCode) || obj.studentCode : obj.studentCode,
-        email: obj.email ? cryptoService.decrypt(obj.email) : undefined,
         avatar: obj.avatar ? cryptoService.decrypt(obj.avatar) : undefined,
         academicYear: obj.academicYear ? cryptoService.decrypt(obj.academicYear) : undefined
       };

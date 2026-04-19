@@ -21,7 +21,6 @@ export interface Teacher {
   name: string;
   teacherCode: string;
   department?: string;
-  email?: string;
   phone?: string;
   avatar?: string;
   createdAt: number;
@@ -32,7 +31,6 @@ export interface Student {
   name: string;
   studentCode: string;
   classId: number;
-  email?: string;
   avatar?: string; // Base64 compressed
   academicYear?: string;
   createdAt: number;

@@ -385,7 +385,6 @@ export const DataManagement = () => {
                   studentCode: code,
                   name: name.toString(),
                   classId: matchedClass.id,
-                  email: (row['Email'] || row['email'])?.toString(),
                   academicYear: (row['Niên khóa'] || row['academicYear'])?.toString(),
                   createdAt: Date.now()
                 };
@@ -411,7 +410,6 @@ export const DataManagement = () => {
                 teacherCode: code,
                 name: name.toString(),
                 department: (row['Khoa/Bộ môn'] || row['department'])?.toString(),
-                email: (row['Email'] || row['email'])?.toString(),
                 phone: (row['Số điện thoại'] || row['phone'])?.toString(),
                 createdAt: Date.now()
               };
@@ -597,8 +595,8 @@ export const DataManagement = () => {
       const wb = XLSX.utils.book_new();
       const CATEGORY_HEADERS: Record<Category, string[]> = {
         classes: ['Tên lớp', 'Khối đào tạo', 'Chuyên ngành', 'Năm học'],
-        students: ['Mã học sinh', 'Họ và tên', 'Tên lớp', 'Email', 'Niên khóa'],
-        teachers: ['Mã giáo viên', 'Họ và tên', 'Khoa/Bộ môn', 'Email', 'Số điện thoại'],
+        students: ['Mã học sinh', 'Họ và tên', 'Tên lớp', 'Niên khóa'],
+        teachers: ['Mã giáo viên', 'Họ và tên', 'Khoa/Bộ môn', 'Số điện thoại'],
         subjects: ['Mã môn học', 'Tên môn học', 'Số tín chỉ'],
         sections: ['Tên lớp HP', 'Tên môn học', 'Tên giáo viên', 'Học kỳ', 'Năm học'],
         sessions: ['Tên lớp HP', 'Ngày', 'Giờ bắt đầu', 'Giờ kết thúc']
@@ -613,12 +611,12 @@ export const DataManagement = () => {
           case 'classes': rows = data.map((d: any) => [d.name, d.grade, d.major || '', d.academicYear]); break;
           case 'students':
             rows = data.map((d: any) => [
-              d.studentCode, d.name, dbClasses?.find(c => c.id === d.classId)?.name || 'N/A', d.email || '', d.academicYear || ''
+              d.studentCode, d.name, dbClasses?.find(c => c.id === d.classId)?.name || 'N/A', d.academicYear || ''
             ]);
             break;
           case 'teachers': 
             rows = data.map((d: any) => [
-              d.teacherCode, d.name, d.department || '', d.email || '', d.phone || ''
+              d.teacherCode, d.name, d.department || '', d.phone || ''
             ]); 
             break;
           case 'subjects': rows = data.map((d: any) => [d.code, d.name, d.credits]); break;

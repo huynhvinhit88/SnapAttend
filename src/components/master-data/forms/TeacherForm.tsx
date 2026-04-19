@@ -20,7 +20,6 @@ export const TeacherForm: React.FC<TeacherFormProps> = ({
   const [formData, setFormData] = useState({
     name: '',
     teacherCode: '',
-    email: '',
     phone: '',
     department: initialDepartment || '',
     avatar: '' as string | undefined
@@ -37,7 +36,6 @@ export const TeacherForm: React.FC<TeacherFormProps> = ({
           setFormData({
             name: teacher.name,
             teacherCode: teacher.teacherCode,
-            email: teacher.email || '',
             phone: teacher.phone || '',
             department: teacher.department || '',
             avatar: teacher.avatar
@@ -63,10 +61,8 @@ export const TeacherForm: React.FC<TeacherFormProps> = ({
 
     setIsSubmitting(true);
     try {
-      const data = {
         name: formData.name.trim(),
         teacherCode: formData.teacherCode.trim(),
-        email: formData.email.trim(),
         phone: formData.phone.trim(),
         department: formData.department.trim(),
         avatar: formData.avatar
@@ -117,13 +113,6 @@ export const TeacherForm: React.FC<TeacherFormProps> = ({
         ]}
         value={formData.department}
         onChange={(e) => setFormData({...formData, department: e.target.value})}
-      />
-      <Input 
-        label="Email" 
-        type="email"
-        placeholder="VD: giao-vien@school.edu.vn"
-        value={formData.email}
-        onChange={(e) => setFormData({...formData, email: e.target.value})}
       />
       <Input 
         label="Số điện thoại" 

@@ -317,25 +317,15 @@ export const Reports = () => {
             onChange={e => setFilter({...filter, sectionId: e.target.value})}
           />
         </div>
-        <div className="flex items-end gap-2 w-full md:w-auto flex-1">
-          <div className="flex-1">
-            <Input 
-              label="Ngày diễn ra ca học" 
-              type="date"
-              icon={<Calendar className="w-4 h-4" />}
-              value={filter.date} 
-              onChange={e => setFilter({...filter, date: e.target.value})}
-            />
-          </div>
-          <Button 
-            variant="secondary" 
-            onClick={() => setFilter({...filter, date: ''})}
-            disabled={!filter.date}
-            className="w-12 h-12 p-0 flex-shrink-0 rounded-xl"
-            title="Xóa ngày"
-          >
-            <Trash2 className="w-4 h-4" />
-          </Button>
+        <div className="flex-1 w-full relative z-10">
+          <Input 
+            label="Ngày diễn ra ca học" 
+            type="date"
+            icon={<Calendar className="w-4 h-4" />}
+            value={filter.date} 
+            onChange={e => setFilter({...filter, date: e.target.value})}
+            onClear={() => setFilter({...filter, date: ''})}
+          />
         </div>
       </Card>
 

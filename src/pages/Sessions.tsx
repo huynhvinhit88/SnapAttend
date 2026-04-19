@@ -239,26 +239,16 @@ export const Sessions = ({ onStartAttendance }: SessionsProps) => {
           />
         </div>
 
-        <div className="flex items-end gap-2 relative z-10">
-          <div className="flex-1">
-            <Input 
-              label="Ngày diễn ra" 
-              type="date"
-              icon={<Calendar className="w-4 h-4" />}
-              className="bg-background-light"
-              value={filterDate} 
-              onChange={e => updateFilter('sessions', { filterDate: e.target.value })}
-            />
-          </div>
-          <Button 
-            variant="secondary" 
-            onClick={() => updateFilter('sessions', { filterDate: '' })}
-            disabled={!filterDate}
-            className="w-12 h-12 p-0 flex-shrink-0 rounded-xl"
-            title="Xóa ngày"
-          >
-            <Trash2 className="w-4 h-4" />
-          </Button>
+        <div className="relative z-10">
+          <Input 
+            label="Ngày diễn ra" 
+            type="date"
+            icon={<Calendar className="w-4 h-4" />}
+            className="bg-background-light"
+            value={filterDate} 
+            onChange={e => updateFilter('sessions', { filterDate: e.target.value })}
+            onClear={() => updateFilter('sessions', { filterDate: '' })}
+          />
         </div>
       </Card>
 

@@ -38,7 +38,7 @@ const StatItem = ({ color, label, count }: { color: string; label: string; count
 );
 
 const CATEGORIES: { id: Category; label: string; icon: any }[] = [
-  { id: 'classes', label: 'Quản lý Lớp', icon: Database },
+  { id: 'classes', label: 'Lớp học', icon: Database },
   { id: 'students', label: 'Học sinh', icon: Database },
   { id: 'teachers', label: 'Giáo viên', icon: Database },
   { id: 'subjects', label: 'Môn học', icon: Database },

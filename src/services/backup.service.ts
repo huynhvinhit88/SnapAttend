@@ -15,6 +15,7 @@ class BackupService {
       enrollments: await db.enrollments.toArray(),
       sessions: await db.sessions.toArray(),
       attendance: await db.attendance.toArray(),
+      academicYears: await db.academicYears.toArray(),
       exportDate: new Date().toISOString()
     };
 
@@ -44,11 +45,11 @@ class BackupService {
       if (!data || !data.classes) throw new Error('Dữ liệu không hợp lệ');
 
       // Thực hiện khôi phục (clear cũ và add mới)
-      await db.transaction('rw', [db.classes, db.teachers, db.students, db.subjects, db.sections, db.enrollments, db.sessions, db.attendance], async () => {
+      await db.transaction('rw', [db.classes, db.teachers, db.students, db.subjects, db.sections, db.enrollments, db.sessions, db.attendance, db.academicYears], async () => {
         await Promise.all([
           db.classes.clear(), db.teachers.clear(), db.students.clear(),
           db.subjects.clear(), db.sections.clear(), db.enrollments.clear(),
-          db.sessions.clear(), db.attendance.clear()
+          db.sessions.clear(), db.attendance.clear(), db.academicYears.clear()
         ]);
 
         await Promise.all([
@@ -59,7 +60,8 @@ class BackupService {
           db.sections.bulkAdd(data.sections),
           db.enrollments.bulkAdd(data.enrollments),
           db.sessions.bulkAdd(data.sessions),
-          db.attendance.bulkAdd(data.attendance)
+          db.attendance.bulkAdd(data.attendance),
+          db.academicYears.bulkAdd(data.academicYears || [])
         ]);
       });
 
